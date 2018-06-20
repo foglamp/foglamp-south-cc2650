@@ -1,0 +1,2 @@
+# TI SensorTag Microservice Plugin
+pexpect==4.0.1
