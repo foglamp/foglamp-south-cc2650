@@ -8,7 +8,7 @@
 import copy
 import pytest
 from unittest.mock import call
-from foglamp.plugins.south.common.sensortag_cc2650 import SensorTagCC2650
+from foglamp.plugins.south.cc2650poll.sensortag_cc2650 import SensorTagCC2650
 from foglamp.plugins.south.cc2650poll import cc2650poll
 
 __author__ = "Amarendra K Sinha"

@@ -10,8 +10,8 @@ import pexpect
 import pytest
 import uuid
 from unittest.mock import call, Mock
-from foglamp.plugins.south.common import sensortag_cc2650
-from foglamp.plugins.south.common.sensortag_cc2650 import SensorTagCC2650
+from foglamp.plugins.south.cc2650poll import sensortag_cc2650
+from foglamp.plugins.south.cc2650poll.sensortag_cc2650 import SensorTagCC2650
 
 __author__ = "Amarendra K Sinha"
 __copyright__ = "Copyright (c) 2017 OSIsoft, LLC"

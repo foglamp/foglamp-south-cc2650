@@ -13,7 +13,7 @@ import uuid
 
 from foglamp.common import logger
 from foglamp.plugins.common import utils
-from foglamp.plugins.south.common.sensortag_cc2650 import *
+from foglamp.plugins.south.cc2650poll.sensortag_cc2650 import *
 from foglamp.services.south import exceptions
 
 __author__ = "Amarendra K Sinha"
