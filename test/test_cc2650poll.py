@@ -47,6 +47,8 @@ _NEW_CONFIG = {
 
 
 
+@pytest.allure.feature("unit")
+@pytest.allure.story("plugin", "south", "cc2650poll")
 def test_plugin_contract():
     # Evaluates if the plugin has all the required methods
     assert callable(getattr(cc2650poll, 'plugin_info'))
