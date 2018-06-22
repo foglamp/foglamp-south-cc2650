@@ -36,20 +36,11 @@ set_files_ownership () {
 }
 
 add_service () {
-    output=$(curl -sX POST http://localhost:8081/foglamp/service -d '{"name": "cc2650poll", "type": "south", "plugin": "cc2650poll"}')
-    service_id=$(echo $output | awk -F '"id": ' '{print $2}' | awk -F \" '{print $2}')
-    echo $service_id
-}
-
-enable_service () {
-    service_id=$1
-    echo $service_id
-    output=$(curl -X PUT -d '{"enabled": true}' http://localhost:8081/foglamp/schedule/$service_id)
+    output=$(curl -sX POST http://localhost:8081/foglamp/service -d '{"name": "cc2650poll", "type": "south", "plugin": "cc2650poll", "enabled": true}')
     echo $output
 }
 
 install_deps
 set_files_ownership
-SERVICE_ID=$(add_service)
-enable_service $SERVICE_ID
+add_service
 echo "cc2650poll plugin installed."
