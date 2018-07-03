@@ -36,8 +36,8 @@ set_files_ownership () {
 }
 
 add_service () {
-    output=$(curl -sX POST http://localhost:8081/foglamp/service -d '{"name": "cc2650poll", "type": "south", "plugin": "cc2650poll", "enabled": true}')
-    echo $output
+    output=$(curl -sX POST http://localhost:8081/foglamp/service -d '{"name": "CC2650 SensorTag Poll", "type": "south", "plugin": "cc2650poll", "enabled": true}')
+    echo ${output}
 }
 
 install_deps

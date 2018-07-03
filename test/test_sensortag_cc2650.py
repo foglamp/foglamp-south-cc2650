@@ -4,7 +4,7 @@
 # See: http://foglamp.readthedocs.io/
 # FOGLAMP_END
 
-"""Unit test for foglamp.plugins.south.common.sensortag_cc2650.py"""
+"""Unit test for common TI SensorTag module sensortag_cc2650.py"""
 
 import pexpect
 import pytest
