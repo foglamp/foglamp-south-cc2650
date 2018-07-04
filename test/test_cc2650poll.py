@@ -25,7 +25,7 @@ _NEW_CONFIG = {
         'default': 'cc2650poll'
     },
     'pollInterval': {
-        'description': 'The interval between poll calls to the South device poll routine expressed in milliseconds.',
+        'description': 'The interval between poll calls to the SensorTag poll routine expressed in milliseconds.',
         'type': 'integer',
         'default': '500'
     },
