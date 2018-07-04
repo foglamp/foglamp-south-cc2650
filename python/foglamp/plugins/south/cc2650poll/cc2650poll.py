@@ -7,7 +7,6 @@
 """ Module for Sensortag CC2650 'poll' type plugin """
 
 import copy
-import datetime
 import json
 import uuid
 
@@ -28,17 +27,17 @@ _DEFAULT_CONFIG = {
          'default': 'cc2650poll'
     },
     'pollInterval': {
-        'description': 'The interval between poll calls to the South device poll routine expressed in milliseconds.',
+        'description': 'The interval between poll calls to the SensorTag poll routine expressed in milliseconds.',
         'type': 'integer',
         'default': '500'
     },
     'bluetoothAddress': {
-        'description': 'Bluetooth MAC address',
+        'description': 'Bluetooth address',
         'type': 'string',
         'default': 'B0:91:22:EA:79:04'
     },
     'connectionTimeout': {
-        'description': 'BLE South Device timeout value in seconds',
+        'description': 'BLE connection timeout value in seconds',
         'type': 'integer',
         'default': '10'
     },
@@ -80,7 +79,7 @@ def plugin_init(config):
     """ Initialise the plugin.
 
     Args:
-        config: JSON configuration document for the South device configuration category
+        config: JSON configuration document for the plugin configuration category
     Returns:
         handle: JSON object to be used in future calls to the plugin
     Raises:
@@ -255,7 +254,7 @@ def plugin_poll(handle):
 def plugin_reconfigure(handle, new_config):
     """  Reconfigures the plugin
 
-    it should be called when the configuration of the plugin is changed during the operation of the South device service;
+    it should be called when the configuration of the plugin is changed during the operation of the South service;
     The new configuration category should be passed.
 
     Args:
@@ -286,7 +285,7 @@ def plugin_reconfigure(handle, new_config):
 
 
 def _plugin_stop(handle):
-    """ Stops the plugin doing required cleanup, to be called prior to the South device service being shut down.
+    """ Stops the plugin doing required cleanup
 
     Args:
         handle: handle returned by the plugin initialisation call
@@ -301,7 +300,7 @@ def _plugin_stop(handle):
 
 
 def plugin_shutdown(handle):
-    """ Shutdowns the plugin doing required cleanup, to be called prior to the South device service being shut down.
+    """ Shutdowns the plugin doing required cleanup, to be called prior to the South service being shut down.
 
     Args:
         handle: handle returned by the plugin initialisation call

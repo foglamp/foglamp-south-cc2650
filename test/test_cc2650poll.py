@@ -4,10 +4,11 @@
 # See: http://foglamp.readthedocs.io/
 # FOGLAMP_END
 
-"""Unit test for foglamp.plugins.south.cc2650poll.cc2650poll.py"""
+"""Unit test for foglamp.plugins.south.cc2650poll / cc2650poll.py"""
 import copy
 import pytest
 from unittest.mock import call
+
 from foglamp.plugins.south.cc2650poll.sensortag_cc2650 import SensorTagCC2650
 from foglamp.plugins.south.cc2650poll import cc2650poll
 
@@ -24,17 +25,17 @@ _NEW_CONFIG = {
         'default': 'cc2650poll'
     },
     'pollInterval': {
-        'description': 'The interval between poll calls to the South device poll routine expressed in milliseconds.',
+        'description': 'The interval between poll calls to the SensorTag poll routine expressed in milliseconds.',
         'type': 'integer',
         'default': '500'
     },
     'bluetoothAddress': {
-        'description': 'Bluetooth MAC address',
+        'description': 'Bluetooth address',
         'type': 'string',
         'default': 'C0:92:23:EB:80:05'
     },
     'connectionTimeout': {
-        'description': 'BLE South Device timeout value in seconds',
+        'description': 'BLE connection timeout value in seconds',
         'type': 'integer',
         'default': '10'
     },
@@ -44,7 +45,6 @@ _NEW_CONFIG = {
         'default': '10'
     }
 }
-
 
 
 @pytest.allure.feature("unit")

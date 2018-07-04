@@ -4,7 +4,7 @@
 # See: http://foglamp.readthedocs.io/
 # FOGLAMP_END
 
-""" Common class for South TI Sensortag CC2650 for both 'async' type and 'poll' type plugins """
+""" Common class for TI SensorTag CC2650 for both 'async' type and 'poll' type plugins """
 
 import pexpect
 from pexpect import ExceptionPexpect, EOF, TIMEOUT
@@ -129,9 +129,10 @@ notification_uuid = '0x2902'
 notification_enable = '0100'
 notification_disable = '0000'
 
+
 class SensorTagCC2650(object):
-    """Handles readings from SensorTagCC2650
-    """
+    """Handles readings from SensorTagCC2650"""
+
     reading_iterations = 1  # number of iterations to read data from the TAG
     is_connected = False
     con = None  # Connection

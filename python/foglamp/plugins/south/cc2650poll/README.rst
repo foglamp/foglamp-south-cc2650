@@ -2,16 +2,15 @@
 FogLAMP South SensorTag CC2650 Poll mode Plugin
 ***********************************************
 
-This directory contains a plugin that pulls readings from SensorTag
-CC2650 South device over Bluetooth connection. The readings are fetched for
+This directory contains a plugin that pulls readings from TI SensorTag
+CC2650 over Bluetooth connection. The readings are fetched for
 Temperature, Presssure, Humidity and Motion Sensors.
 
-To connect, the sensor needs to be on in discoverable mode and its MAC
+To connect, the sensor needs to be on in discoverable mode and its bluetooth
 address properly recorded in the Configuration.
 
-For a single SensorTag CC2650 South device, use only one mode - either poll or
-async, at a time. For this you will need to remove the relevant schedule from
-schedules table.
+For a single SensorTag CC2650, use only one mode - either poll or
+async, at a time. For this you will need to remove the relevant schedule / service.
 
 The polling is done at fixed intervals which is configurable via "pollInterval"
 configuration item.
@@ -26,4 +25,4 @@ precise, before shutting down. It waits for a fixed time, configured via
 Known issues:
 =============
 Since the plugin runs in a separate process and its shutdown is controlled by the
-central FogLAMP server, pressing CTRL-C does not terminate the process properly.
+FogLAMP Core, pressing CTRL-C does not terminate the process properly.
