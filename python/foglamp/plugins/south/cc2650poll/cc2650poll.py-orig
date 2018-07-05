@@ -23,12 +23,12 @@ __version__ = "${VERSION}"
 
 _DEFAULT_CONFIG = {
     'plugin': {
-         'description': 'TI Sensortag CC2650 (poll)',
+         'description': 'TI SensorTag Polling South Plugin',
          'type': 'string',
          'default': 'cc2650poll'
     },
     'pollInterval': {
-        'description': 'Interval between polls of SensorTag in milliseconds',
+        'description': 'The interval between poll calls to the South device poll routine expressed in milliseconds.',
         'type': 'integer',
         'default': '500'
     },
@@ -38,12 +38,12 @@ _DEFAULT_CONFIG = {
         'default': 'B0:91:22:EA:79:04'
     },
     'connectionTimeout': {
-        'description': 'BLE timeout in seconds',
+        'description': 'BLE South Device timeout value in seconds',
         'type': 'integer',
         'default': '10'
     },
     'shutdownThreshold': {
-        'description': 'Time to wait to complete pending tasks before shutdown (seconds)',
+        'description': 'Time in seconds allowed for shutdown to complete the pending tasks',
         'type': 'integer',
         'default': '10'
     },
@@ -67,7 +67,7 @@ def plugin_info():
     """
 
     return {
-        'name': 'TI SensorTag CC2650 (poll)',
+        'name': 'TI SensorTag CC2650 Poll plugin',
         'version': '1.0',
         'mode': 'poll',
         'type': 'south',
@@ -148,19 +148,19 @@ def plugin_poll(handle):
             raise RuntimeError
 
         # Enable sensors
-        #tag.char_write_cmd(handle['characteristics']['temperature']['configuration']['handle'], char_enable)
+        tag.char_write_cmd(handle['characteristics']['temperature']['configuration']['handle'], char_enable)
         tag.char_write_cmd(handle['characteristics']['luminance']['configuration']['handle'], char_enable)
         tag.char_write_cmd(handle['characteristics']['humidity']['configuration']['handle'], char_enable)
-        #tag.char_write_cmd(handle['characteristics']['pressure']['configuration']['handle'], char_enable)
+        tag.char_write_cmd(handle['characteristics']['pressure']['configuration']['handle'], char_enable)
         tag.char_write_cmd(handle['characteristics']['movement']['configuration']['handle'], movement_enable)
 
         # Get temperature
-        #count = 0
-        #while count < SensorTagCC2650.reading_iterations:
-        #    object_temp_celsius, ambient_temp_celsius = tag.hex_temp_to_celsius(
-        #        tag.char_read_hnd(handle['characteristics']['temperature']['data']['handle'], "temperature"))
-        #    time.sleep(0.5)  # wait for a while
-        #    count = count + 1
+        count = 0
+        while count < SensorTagCC2650.reading_iterations:
+            object_temp_celsius, ambient_temp_celsius = tag.hex_temp_to_celsius(
+                tag.char_read_hnd(handle['characteristics']['temperature']['data']['handle'], "temperature"))
+            time.sleep(0.5)  # wait for a while
+            count = count + 1
 
         # Get luminance
         lux_luminance = tag.hex_lux_to_lux(
@@ -171,8 +171,8 @@ def plugin_poll(handle):
             tag.char_read_hnd(handle['characteristics']['humidity']['data']['handle'], "humidity"))
 
         # Get pressure
-        #bar_pressure = tag.hex_pressure_to_pressure(
-        #    tag.char_read_hnd(handle['characteristics']['pressure']['data']['handle'], "pressure"))
+        bar_pressure = tag.hex_pressure_to_pressure(
+            tag.char_read_hnd(handle['characteristics']['pressure']['data']['handle'], "pressure"))
 
         # Get movement
         gyro_x, gyro_y, gyro_z, acc_x, acc_y, acc_z, mag_x, mag_y, mag_z, acc_range = tag.hex_movement_to_movement(
@@ -200,46 +200,45 @@ def plugin_poll(handle):
             tag.char_read_hnd(handle['characteristics']['battery']['data']['handle'], "battery"))
 
         # Disable sensors
-        #tag.char_write_cmd(handle['characteristics']['temperature']['configuration']['handle'], char_disable)
+        tag.char_write_cmd(handle['characteristics']['temperature']['configuration']['handle'], char_disable)
         tag.char_write_cmd(handle['characteristics']['luminance']['configuration']['handle'], char_disable)
         tag.char_write_cmd(handle['characteristics']['humidity']['configuration']['handle'], char_disable)
-        #tag.char_write_cmd(handle['characteristics']['pressure']['configuration']['handle'], char_disable)
+        tag.char_write_cmd(handle['characteristics']['pressure']['configuration']['handle'], char_disable)
         tag.char_write_cmd(handle['characteristics']['movement']['configuration']['handle'], movement_disable)
 
         # "values" (and not "readings") denotes that this reading needs to be further broken down to components.
         readings = {
-#            'temperature': {
-#                "object": object_temp_celsius,
-#                'ambient': ambient_temp_celsius
-#            },
-            'light': {"lux": lux_luminance},
-#            'humidity': {
-"humidity": {"humidity": rel_humidity},
-"temp": {"temp": rel_temperature},
-#            },
-#            'pressure': {"pressure": bar_pressure},
-'gyro': {
+            'temperature': {
+                "object": object_temp_celsius,
+                'ambient': ambient_temp_celsius
+            },
+            'luxometer': {"lux": lux_luminance},
+            'humidity': {
+                "humidity": rel_humidity,
+                "temperature": rel_temperature
+            },
+            'pressure': {"pressure": bar_pressure},
+            'gyroscope': {
                 "x": gyro_x,
                 "y": gyro_y,
                 "z": gyro_z
             },
-#            'accelerometer': {
-#                "x": acc_x,
-#                "y": acc_y,
-#                "z": acc_z
-#            },
-#            'magnetometer': {
-#                "x": mag_x,
-#                "y": mag_y,
-#                "z": mag_z
-#            },
+            'accelerometer': {
+                "x": acc_x,
+                "y": acc_y,
+                "z": acc_z
+            },
+            'magnetometer': {
+                "x": mag_x,
+                "y": mag_y,
+                "z": mag_z
+            },
             'battery': {"percentage": battery_level},
         }
 
         for reading_key in readings.keys():
             data.append({
-                # 'asset': 'TI Sensortag CC2650/' + reading_key,
-                'asset': reading_key,
+                'asset': 'TI Sensortag CC2650/' + reading_key,
                 'timestamp': time_stamp,
                 'key': str(uuid.uuid4()),
                 'readings': readings[reading_key]
