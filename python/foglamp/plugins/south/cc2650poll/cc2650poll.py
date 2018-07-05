@@ -233,7 +233,7 @@ def plugin_poll(handle):
 #                "y": mag_y,
 #                "z": mag_z
 #            },
-            'battery': {"percentage": battery_level},
+            'batt': {"percentage": battery_level},
         }
 
         for reading_key in readings.keys():
