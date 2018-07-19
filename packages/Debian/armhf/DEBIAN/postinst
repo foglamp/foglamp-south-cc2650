@@ -43,4 +43,4 @@ add_service () {
 install_deps
 set_files_ownership
 add_service
-echo "cc2650poll plugin installed."
+echo "CC2650 SensorTag Poll plugin installed."
