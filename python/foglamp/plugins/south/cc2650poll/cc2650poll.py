@@ -45,11 +45,6 @@ _DEFAULT_CONFIG = {
         'description': 'Time in seconds allowed for shutdown to complete the pending tasks',
         'type': 'integer',
         'default': '10'
-    },
-    'management_host': {
-        'description': 'Management host',
-        'type': 'string',
-        'default': '127.0.0.1',
     }
 }
 
