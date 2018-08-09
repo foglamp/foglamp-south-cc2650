@@ -265,7 +265,7 @@ def plugin_reconfigure(handle, new_config):
     diff = utils.get_diff(handle, new_config)
 
     # Plugin should re-initialize and restart if key configuration is changed
-    if 'bluetoothAddress' in diff or 'management_host' in diff:
+    if 'bluetoothAddress' in diff:
         _plugin_stop(handle)
         new_handle = plugin_init(new_config)
         new_handle['restart'] = 'yes'
@@ -274,7 +274,7 @@ def plugin_reconfigure(handle, new_config):
         new_handle = copy.deepcopy(new_config)
         new_handle['restart'] = 'no'
     else:
-        new_handle = copy.deepcopy(handle)
+        new_handle = copy.deepcopy(new_config)
         new_handle['restart'] = 'no'
     return new_handle
 
