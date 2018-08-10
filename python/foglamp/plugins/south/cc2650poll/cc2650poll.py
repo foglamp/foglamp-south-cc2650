@@ -26,6 +26,11 @@ _DEFAULT_CONFIG = {
          'type': 'string',
          'default': 'cc2650poll'
     },
+    'assetPrefix': {
+        'description': 'Asset prefix',
+        'type': 'string',
+        'default': 'CC2650'
+    },
     'pollInterval': {
         'description': 'The interval between poll calls to the SensorTag poll routine expressed in milliseconds.',
         'type': 'integer',
@@ -45,8 +50,41 @@ _DEFAULT_CONFIG = {
         'description': 'Time in seconds allowed for shutdown to complete the pending tasks',
         'type': 'integer',
         'default': '10'
+    },
+    'temperatureSensor': {
+        'description': 'Enable temperature sensor',
+        'type': 'boolean',
+        'default': 'true',
+    },
+    'luminanceSensor': {
+        'description': 'Enable luminance sensor',
+        'type': 'boolean',
+        'default': 'false',
+    },
+    'humiditySensor': {
+        'description': 'Enable humidity sensor',
+        'type': 'boolean',
+        'default': 'false',
+    },
+    'pressureSensor': {
+        'description': 'Enable pressure sensor',
+        'type': 'boolean',
+        'default': 'false',
+    },
+    'movementSensor': {
+        'description': 'Enable movement sensor',
+        'type': 'boolean',
+        'default': 'false',
+    },
+    'batteryData': {
+        'description': 'Get battery data',
+        'type': 'boolean',
+        'default': 'false',
     }
 }
+_restart_config = None
+_tag = None
+
 
 _LOGGER = logger.setup(__name__, level=20)
 
@@ -79,30 +117,45 @@ def plugin_init(config):
         handle: JSON object to be used in future calls to the plugin
     Raises:
     """
+    global _restart_config, _tag
+
     sensortag_characteristics = copy.deepcopy(characteristics)
     data = copy.deepcopy(config)
+    _restart_config = copy.deepcopy(config)
 
     bluetooth_adr = config['bluetoothAddress']['value']
     timeout = config['connectionTimeout']['value']
-    tag = SensorTagCC2650(bluetooth_adr, timeout)
+    _tag = SensorTagCC2650(bluetooth_adr, timeout)
 
-    data['is_connected'] = tag.is_connected
+    data['is_connected'] = _tag.is_connected
     if data['is_connected'] is True:
         # The GATT table can change for different firmware revisions, so it is important to do a proper characteristic
         # discovery rather than hard-coding the attribute handles.
         for char in sensortag_characteristics.keys():
             for _type in ['data', 'configuration', 'period']:
-                handle = tag.get_char_handle(sensortag_characteristics[char][_type]['uuid'])
+                handle = _tag.get_char_handle(sensortag_characteristics[char][_type]['uuid'])
                 sensortag_characteristics[char][_type]['handle'] = handle
 
         # Get Battery handle
-        handle = tag.get_char_handle(battery['data']['uuid'])
+        handle = _tag.get_char_handle(battery['data']['uuid'])
         battery['data']['handle'] = handle
         sensortag_characteristics['battery'] = battery
 
         data['characteristics'] = sensortag_characteristics
-        data['tag'] = tag
+        data['tag'] = _tag
         _LOGGER.info('SensorTagCC2650 {} Polling initialized'.format(bluetooth_adr))
+
+    # Enable sensor
+    if data['temperatureSensor']['value'] == 'true':
+        _tag.char_write_cmd(data['characteristics']['temperature']['configuration']['handle'], char_enable)
+    if data['luminanceSensor']['value'] == 'true':
+        _tag.char_write_cmd(data['characteristics']['luminance']['configuration']['handle'], char_enable)
+    if data['humiditySensor']['value'] == 'true':
+        _tag.char_write_cmd(data['characteristics']['humidity']['configuration']['handle'], char_enable)
+    if data['pressureSensor']['value'] == 'true':
+        _tag.char_write_cmd(data['characteristics']['pressure']['configuration']['handle'], char_enable)
+    if data['movementSensor']['value'] == 'true':
+        _tag.char_write_cmd(data['characteristics']['movement']['configuration']['handle'], movement_enable)
 
     return data
 
@@ -120,127 +173,96 @@ def plugin_poll(handle):
     Raises:
         DataRetrievalError
     """
-    if 'tag' not in handle:
-        raise RuntimeError
-
     time_stamp = utils.local_timestamp()
     data = list()
     bluetooth_adr = handle['bluetoothAddress']['value']
-    tag = handle['tag']
-    object_temp_celsius = None
-    ambient_temp_celsius = None
-    lux_luminance = None
-    rel_humidity = None
-    rel_temperature = None
-    bar_pressure = None
-    movement = None
-    battery_level = None
-    keypress_state = None
+    asset_code = '{}[{}]/'.format(handle['assetPrefix']['value'], bluetooth_adr)
 
-    try:
-        if not tag.is_connected:
-            raise RuntimeError
+    if not _tag.is_connected:
+        raise RuntimeError
 
-        # Enable sensors
-        tag.char_write_cmd(handle['characteristics']['temperature']['configuration']['handle'], char_enable)
-        tag.char_write_cmd(handle['characteristics']['luminance']['configuration']['handle'], char_enable)
-        tag.char_write_cmd(handle['characteristics']['humidity']['configuration']['handle'], char_enable)
-        tag.char_write_cmd(handle['characteristics']['pressure']['configuration']['handle'], char_enable)
-        tag.char_write_cmd(handle['characteristics']['movement']['configuration']['handle'], movement_enable)
+    while _tag.is_connected:
+        try:
+            if handle['temperatureSensor']['value'] == 'true':
+                count = 0
+                while count < SensorTagCC2650.reading_iterations:
+                    object_temp_celsius, ambient_temp_celsius = _tag.hex_temp_to_celsius(
+                        _tag.char_read_hnd(handle['characteristics']['temperature']['data']['handle'], "temperature"))
+                    time.sleep(0.5)  # wait for a while
+                    count = count + 1
+                data.append({
+                    'asset': asset_code + 'temperature',
+                    'timestamp': time_stamp,
+                    'key': str(uuid.uuid4()),
+                    'readings': {"object": object_temp_celsius, 'ambient': ambient_temp_celsius}
+                })
 
-        # Get temperature
-        count = 0
-        while count < SensorTagCC2650.reading_iterations:
-            object_temp_celsius, ambient_temp_celsius = tag.hex_temp_to_celsius(
-                tag.char_read_hnd(handle['characteristics']['temperature']['data']['handle'], "temperature"))
-            time.sleep(0.5)  # wait for a while
-            count = count + 1
+            if handle['luminanceSensor']['value'] == 'true':
+                lux_luminance = _tag.hex_lux_to_lux(
+                    _tag.char_read_hnd(handle['characteristics']['luminance']['data']['handle'], "luminance"))
+                data.append({
+                    'asset': asset_code + 'luminance',
+                    'timestamp': time_stamp,
+                    'key': str(uuid.uuid4()),
+                    'readings': {"lux": lux_luminance}
+                })
 
-        # Get luminance
-        lux_luminance = tag.hex_lux_to_lux(
-            tag.char_read_hnd(handle['characteristics']['luminance']['data']['handle'], "luminance"))
+            if handle['humiditySensor']['value'] == 'true':
+                rel_humidity, rel_temperature = _tag.hex_humidity_to_rel_humidity(
+                    _tag.char_read_hnd(handle['characteristics']['humidity']['data']['handle'], "humidity"))
+                data.append({
+                    'asset': asset_code + 'humidity',
+                    'timestamp': time_stamp,
+                    'key': str(uuid.uuid4()),
+                    'readings': {"humidity": rel_humidity, "temperature": rel_temperature}
+                })
 
-        # Get humidity
-        rel_humidity, rel_temperature = tag.hex_humidity_to_rel_humidity(
-            tag.char_read_hnd(handle['characteristics']['humidity']['data']['handle'], "humidity"))
+            if handle['pressureSensor']['value'] == 'true':
+                bar_pressure = _tag.hex_pressure_to_pressure(
+                    _tag.char_read_hnd(handle['characteristics']['pressure']['data']['handle'], "pressure"))
+                data.append({
+                    'asset': asset_code + 'pressure',
+                    'timestamp': time_stamp,
+                    'key': str(uuid.uuid4()),
+                    'readings': {"pressure": bar_pressure}
+                })
 
-        # Get pressure
-        bar_pressure = tag.hex_pressure_to_pressure(
-            tag.char_read_hnd(handle['characteristics']['pressure']['data']['handle'], "pressure"))
+            if handle['movementSensor']['value'] == 'true':
+                gyro_x, gyro_y, gyro_z, acc_x, acc_y, acc_z, mag_x, mag_y, mag_z, acc_range = _tag.hex_movement_to_movement(
+                    _tag.char_read_hnd(handle['characteristics']['movement']['data']['handle'], "movement"))
+                data.append({
+                    'asset': asset_code + 'gyroscope',
+                    'timestamp': time_stamp,
+                    'key': str(uuid.uuid4()),
+                    'readings': {"x": gyro_x, "y": gyro_y, "z": gyro_z}
+                })
+                data.append({
+                    'asset': asset_code + 'accelerometer',
+                    'timestamp': time_stamp,
+                    'key': str(uuid.uuid4()),
+                    'readings': {"x": acc_x, "y": acc_y, "z": acc_z}
+                })
+                data.append({
+                    'asset': asset_code + 'magnetometer',
+                    'timestamp': time_stamp,
+                    'key': str(uuid.uuid4()),
+                    'readings': {"x": mag_x, "y": mag_y, "z": mag_z}
+                })
 
-        # Get movement
-        gyro_x, gyro_y, gyro_z, acc_x, acc_y, acc_z, mag_x, mag_y, mag_z, acc_range = tag.hex_movement_to_movement(
-            tag.char_read_hnd(handle['characteristics']['movement']['data']['handle'], "movement"))
-        movement = {
-            'gyro': {
-                'x': gyro_x,
-                'y': gyro_y,
-                'z': gyro_z,
-            },
-            'acc': {
-                'x': acc_x,
-                'y': acc_y,
-                'z': acc_z,
-            },
-            'mag': {
-                'x': mag_x,
-                'y': mag_y,
-                'z': mag_z,
-            },
-            'acc_range': acc_range
-        }
-
-        battery_level = tag.get_battery_level(
-            tag.char_read_hnd(handle['characteristics']['battery']['data']['handle'], "battery"))
-
-        # Disable sensors
-        tag.char_write_cmd(handle['characteristics']['temperature']['configuration']['handle'], char_disable)
-        tag.char_write_cmd(handle['characteristics']['luminance']['configuration']['handle'], char_disable)
-        tag.char_write_cmd(handle['characteristics']['humidity']['configuration']['handle'], char_disable)
-        tag.char_write_cmd(handle['characteristics']['pressure']['configuration']['handle'], char_disable)
-        tag.char_write_cmd(handle['characteristics']['movement']['configuration']['handle'], movement_disable)
-
-        # "values" (and not "readings") denotes that this reading needs to be further broken down to components.
-        readings = {
-            'temperature': {
-                "object": object_temp_celsius,
-                'ambient': ambient_temp_celsius
-            },
-            'luxometer': {"lux": lux_luminance},
-            'humidity': {
-                "humidity": rel_humidity,
-                "temperature": rel_temperature
-            },
-            'pressure': {"pressure": bar_pressure},
-            'gyroscope': {
-                "x": gyro_x,
-                "y": gyro_y,
-                "z": gyro_z
-            },
-            'accelerometer': {
-                "x": acc_x,
-                "y": acc_y,
-                "z": acc_z
-            },
-            'magnetometer': {
-                "x": mag_x,
-                "y": mag_y,
-                "z": mag_z
-            },
-            'battery': {"percentage": battery_level},
-        }
-
-        for reading_key in readings.keys():
-            data.append({
-                'asset': 'TI Sensortag CC2650/' + reading_key,
-                'timestamp': time_stamp,
-                'key': str(uuid.uuid4()),
-                'readings': readings[reading_key]
-            })
-
-    except (Exception, RuntimeError, pexpect.exceptions.TIMEOUT) as ex:
-        _LOGGER.exception("SensorTagCC2650 {} exception: {}".format(bluetooth_adr, str(ex)))
-        raise exceptions.DataRetrievalError(ex)
+            if handle['batteryData']['value'] == 'true':
+                battery_level = _tag.get_battery_level(
+                    _tag.char_read_hnd(handle['characteristics']['battery']['data']['handle'], "battery"))
+                data.append({
+                    'asset': asset_code + 'battery',
+                    'timestamp': time_stamp,
+                    'key': str(uuid.uuid4()),
+                    'readings': {"percentage": battery_level}
+                })
+            break
+        except (Exception, RuntimeError, pexpect.exceptions.TIMEOUT) as ex:
+            _LOGGER.exception("SensorTagCC2650 {} exception: {}".format(bluetooth_adr, str(ex)))
+            _plugin_restart(handle, _restart_config)
+            continue
 
     _LOGGER.debug("SensorTagCC2650 {} reading: {}".format(bluetooth_adr, json.dumps(data)))
     return data
@@ -259,17 +281,26 @@ def plugin_reconfigure(handle, new_config):
         new_handle: new handle to be used in the future calls
     Raises:
     """
-    _LOGGER.info("Old config for CC2650POLL plugin {} \n new config {}".format(handle, new_config))
+    bluetooth_adr = handle['bluetoothAddress']['value']
+    _LOGGER.info("Old config for CC2650POLL {} plugin {} \n new config {}".format(bluetooth_adr, handle, new_config))
 
     # Find diff between old config and new config
     diff = utils.get_diff(handle, new_config)
 
     # Plugin should re-initialize and restart if key configuration is changed
-    if 'bluetoothAddress' in diff:
+    if 'bluetoothAddress' in diff or \
+                'assetPrefix' in diff or \
+                'maxRetry' in diff or \
+                'temperatureSensor' in diff or \
+                'luminanceSensor' in diff or \
+                'humiditySensor' in diff or \
+                'pressureSensor' in diff or \
+                'movementSensor' in diff or \
+                'batteryData' in diff:
         _plugin_stop(handle)
         new_handle = plugin_init(new_config)
         new_handle['restart'] = 'yes'
-        _LOGGER.info("Restarting CC2650POLL plugin due to change in configuration keys [{}]".format(', '.join(diff)))
+        _LOGGER.info("Restarting CC2650POLL {} plugin due to change in configuration keys [{}]".format(bluetooth_adr, ', '.join(diff)))
     elif 'pollInterval' in diff or 'connectionTimeout' in diff or 'shutdownThreshold' in diff:
         new_handle = copy.deepcopy(new_config)
         new_handle['restart'] = 'no'
@@ -290,6 +321,14 @@ def _plugin_stop(handle):
     if 'tag' in handle:
         bluetooth_adr = handle['bluetoothAddress']['value']
         tag = handle['tag']
+
+        # Disable sensors
+        tag.char_write_cmd(handle['characteristics']['temperature']['configuration']['handle'], char_disable)
+        tag.char_write_cmd(handle['characteristics']['luminance']['configuration']['handle'], char_disable)
+        tag.char_write_cmd(handle['characteristics']['humidity']['configuration']['handle'], char_disable)
+        tag.char_write_cmd(handle['characteristics']['pressure']['configuration']['handle'], char_disable)
+        tag.char_write_cmd(handle['characteristics']['movement']['configuration']['handle'], movement_disable)
+
         tag.disconnect()
         _LOGGER.info('SensorTagCC2650 {} Disconnected.'.format(bluetooth_adr))
 
@@ -302,5 +341,14 @@ def plugin_shutdown(handle):
     Returns:
     Raises:
     """
+    bluetooth_adr = handle['bluetoothAddress']['value']
     _plugin_stop(handle)
-    _LOGGER.info('CC2650 poll plugin shut down.')
+    _LOGGER.info('CC2650 {} poll plugin shut down.'.format(bluetooth_adr))
+
+
+def _plugin_restart(handle, restart_config):
+    """ Restarts plugin"""
+    bluetooth_adr = handle['bluetoothAddress']['value']
+    _LOGGER.error("Restarting SensorTagCC2650 {} after timeout failure...".format(bluetooth_adr))
+    plugin_shutdown(handle)
+    plugin_init(restart_config)
