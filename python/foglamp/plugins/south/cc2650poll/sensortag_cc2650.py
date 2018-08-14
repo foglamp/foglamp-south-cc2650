@@ -140,32 +140,30 @@ class SensorTagCC2650(object):
     _CHAR_HANDLE_TIMEOUT = 3
 
     def __init__(self, bluetooth_adr, timeout):
-        attempt_count = 1
-        while True:
-            try:
-                self.bluetooth_adr = bluetooth_adr
-                # If "con" var is set at class level, pick that one else create a new instance
-                if SensorTagCC2650.con is None:
-                    self.con = pexpect.spawn('gatttool -b ' + bluetooth_adr + ' --interactive')
-                else:
-                    self.con = SensorTagCC2650.con
-                self.con.expect('\[LE\]>', timeout=int(timeout))
-                if attempt_count == 1 or attempt_count % 5 == 0:  # Broadcast every 5th time after combined timeout + sleep
-                    msg_debug = 'Attempting to discover SensorTagCC2650 {}. If swtiched off, please switch it on.'.\
-                                format(self.bluetooth_adr)
-                    print(msg_debug)
-                    _LOGGER.info(msg_debug)
-
-                self.con.sendline('connect')
-                self.con.expect('.*Connection successful.*\[LE\]>', timeout=int(timeout))
-                self.is_connected = True
-                msg_success = 'SensorTagCC2650 {} connected successfully'.format(self.bluetooth_adr)
-                print(msg_success)
-                _LOGGER.info(msg_success)
-                break
-            except (ExceptionPexpect, EOF, TIMEOUT, Exception) as ex:
-                attempt_count += 1
-                time.sleep(0.33)
+        try:
+            self.bluetooth_adr = bluetooth_adr
+            # If "con" var is set at class level, pick that one else create a new instance
+            if SensorTagCC2650.con is None:
+                self.con = pexpect.spawn('gatttool -b ' + bluetooth_adr + ' --interactive')
+            else:
+                self.con = SensorTagCC2650.con
+            self.con.expect('\[LE\]>', timeout=int(timeout))
+            msg_debug = 'Attempting to discover SensorTagCC2650 {}. If swtiched off, please switch it on.'.\
+                        format(self.bluetooth_adr)
+            print(msg_debug)
+            _LOGGER.info(msg_debug)
+            self.con.sendline('connect')
+            self.con.expect('.*Connection successful.*\[LE\]>', timeout=int(timeout))
+            self.is_connected = True
+            msg_success = 'SensorTagCC2650 {} connected successfully'.format(self.bluetooth_adr)
+            print(msg_success)
+            _LOGGER.info(msg_success)
+        except (ExceptionPexpect, EOF, TIMEOUT, Exception) as ex:
+            self.is_connected = False
+            # TODO: Investigate why SensorTag goes to sleep often and find a suitable software solution to awake it.
+            msg_failure = 'SensorTagCC2650 {} initial connection failure. Timeout={} seconds.'.format(self.bluetooth_adr, timeout)
+            print(msg_failure)
+            _LOGGER.exception(msg_failure)
 
     def disconnect(self):
         if not self.is_connected:
