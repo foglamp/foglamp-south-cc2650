@@ -9,6 +9,7 @@
 import copy
 import json
 import uuid
+import threading
 
 from foglamp.common import logger
 from foglamp.plugins.common import utils
@@ -44,7 +45,7 @@ _DEFAULT_CONFIG = {
     'connectionTimeout': {
         'description': 'BLE connection timeout value in seconds',
         'type': 'integer',
-        'default': '10'
+        'default': '3'
     },
     'shutdownThreshold': {
         'description': 'Time in seconds allowed for shutdown to complete the pending tasks',
@@ -124,8 +125,6 @@ _DEFAULT_CONFIG = {
 }
 _restart_config = None
 _handle = None
-
-
 _LOGGER = logger.setup(__name__, level=20)
 
 
@@ -164,11 +163,9 @@ def plugin_init(config):
     _restart_config = copy.deepcopy(config)
 
     bluetooth_adr = config['bluetoothAddress']['value']
-    timeout = config['connectionTimeout']['value']
+    timeout = int(config['connectionTimeout']['value'])
     tag = SensorTagCC2650(bluetooth_adr, timeout)
-    data['tag'] = tag
-    data['is_connected'] = tag.is_connected
-    if data['is_connected'] is True:
+    if tag.is_connected is True:
         # The GATT table can change for different firmware revisions, so it is important to do a proper characteristic
         # discovery rather than hard-coding the attribute handles.
         for char in sensortag_characteristics.keys():
@@ -196,7 +193,9 @@ def plugin_init(config):
         if data['movementSensor']['value'] == 'true':
             tag.char_write_cmd(data['characteristics']['movement']['configuration']['handle'], movement_enable)
 
-    _handle = data
+    _handle = copy.deepcopy(data)
+    _handle['tag'] = tag
+    data['tag'] = tag
     return data
 
 
@@ -213,101 +212,100 @@ def plugin_poll(handle):
     Raises:
         DataRetrievalError
     """
-    while True:
-        bluetooth_adr = _handle['bluetoothAddress']['value']
-        tag = _handle['tag']
-        asset_prefix = '{}'.format(_handle['assetPrefix']['value']).replace('%M', bluetooth_adr)
+    global _handle, _restart_config
 
+    bluetooth_adr = _handle['bluetoothAddress']['value']
+    tag = _handle['tag']
+    asset_prefix = '{}'.format(_handle['assetPrefix']['value']).replace('%M', bluetooth_adr)
+
+    try:
         if not tag.is_connected:
-            _plugin_restart(_handle, _restart_config)
-            continue
+            raise RuntimeError("SensorTagCC2650 {} not connected".format(bluetooth_adr))
 
         time_stamp = utils.local_timestamp()
         data = list()
 
         # In this method, cannot use "handle" as it might have changed due to restart. Hence use "_handle".
 
-        try:
-            if _handle['temperatureSensor']['value'] == 'true':
-                count = 0
-                while count < SensorTagCC2650.reading_iterations:
-                    object_temp_celsius, ambient_temp_celsius = tag.hex_temp_to_celsius(
-                        tag.char_read_hnd(_handle['characteristics']['temperature']['data']['handle'], "temperature"))
-                    time.sleep(0.5)  # wait for a while
-                    count = count + 1
-                data.append({
-                    'asset': '{}{}'.format(asset_prefix, _handle['temperatureSensorName']['value']),
-                    'timestamp': time_stamp,
-                    'key': str(uuid.uuid4()),
-                    'readings': {"object": object_temp_celsius, 'ambient': ambient_temp_celsius}
-                })
+        if _handle['temperatureSensor']['value'] == 'true':
+            count = 0
+            while count < SensorTagCC2650.reading_iterations:
+                object_temp_celsius, ambient_temp_celsius = tag.hex_temp_to_celsius(
+                    tag.char_read_hnd(_handle['characteristics']['temperature']['data']['handle'], "temperature"))
+                time.sleep(0.5)  # wait for a while
+                count = count + 1
+            data.append({
+                'asset': '{}{}'.format(asset_prefix, _handle['temperatureSensorName']['value']),
+                'timestamp': time_stamp,
+                'key': str(uuid.uuid4()),
+                'readings': {"object": object_temp_celsius, 'ambient': ambient_temp_celsius}
+            })
 
-            if _handle['luminanceSensor']['value'] == 'true':
-                lux_luminance = tag.hex_lux_to_lux(
-                    tag.char_read_hnd(_handle['characteristics']['luminance']['data']['handle'], "luminance"))
-                data.append({
-                    'asset': '{}{}'.format(asset_prefix, _handle['luminanceSensorName']['value']),
-                    'timestamp': time_stamp,
-                    'key': str(uuid.uuid4()),
-                    'readings': {"lux": lux_luminance}
-                })
+        if _handle['luminanceSensor']['value'] == 'true':
+            lux_luminance = tag.hex_lux_to_lux(
+                tag.char_read_hnd(_handle['characteristics']['luminance']['data']['handle'], "luminance"))
+            data.append({
+                'asset': '{}{}'.format(asset_prefix, _handle['luminanceSensorName']['value']),
+                'timestamp': time_stamp,
+                'key': str(uuid.uuid4()),
+                'readings': {"lux": lux_luminance}
+            })
 
-            if _handle['humiditySensor']['value'] == 'true':
-                rel_humidity, rel_temperature = tag.hex_humidity_to_rel_humidity(
-                    tag.char_read_hnd(_handle['characteristics']['humidity']['data']['handle'], "humidity"))
-                data.append({
-                    'asset': '{}{}'.format(asset_prefix, _handle['humiditySensorName']['value']),
-                    'timestamp': time_stamp,
-                    'key': str(uuid.uuid4()),
-                    'readings': {"humidity": rel_humidity, "temperature": rel_temperature}
-                })
+        if _handle['humiditySensor']['value'] == 'true':
+            rel_humidity, rel_temperature = tag.hex_humidity_to_rel_humidity(
+                tag.char_read_hnd(_handle['characteristics']['humidity']['data']['handle'], "humidity"))
+            data.append({
+                'asset': '{}{}'.format(asset_prefix, _handle['humiditySensorName']['value']),
+                'timestamp': time_stamp,
+                'key': str(uuid.uuid4()),
+                'readings': {"humidity": rel_humidity, "temperature": rel_temperature}
+            })
 
-            if _handle['pressureSensor']['value'] == 'true':
-                bar_pressure = tag.hex_pressure_to_pressure(
-                    tag.char_read_hnd(_handle['characteristics']['pressure']['data']['handle'], "pressure"))
-                data.append({
-                    'asset': '{}{}'.format(asset_prefix, _handle['pressureSensorName']['value']),
-                    'timestamp': time_stamp,
-                    'key': str(uuid.uuid4()),
-                    'readings': {"pressure": bar_pressure}
-                })
+        if _handle['pressureSensor']['value'] == 'true':
+            bar_pressure = tag.hex_pressure_to_pressure(
+                tag.char_read_hnd(_handle['characteristics']['pressure']['data']['handle'], "pressure"))
+            data.append({
+                'asset': '{}{}'.format(asset_prefix, _handle['pressureSensorName']['value']),
+                'timestamp': time_stamp,
+                'key': str(uuid.uuid4()),
+                'readings': {"pressure": bar_pressure}
+            })
 
-            if _handle['movementSensor']['value'] == 'true':
-                gyro_x, gyro_y, gyro_z, acc_x, acc_y, acc_z, mag_x, mag_y, mag_z, acc_range = tag.hex_movement_to_movement(
-                    tag.char_read_hnd(_handle['characteristics']['movement']['data']['handle'], "movement"))
-                data.append({
-                    'asset': '{}{}'.format(asset_prefix, _handle['gyroscopeSensorName']['value']),
-                    'timestamp': time_stamp,
-                    'key': str(uuid.uuid4()),
-                    'readings': {"x": gyro_x, "y": gyro_y, "z": gyro_z}
-                })
-                data.append({
-                    'asset': '{}{}'.format(asset_prefix, _handle['accelerometerSensorName']['value']),
-                    'timestamp': time_stamp,
-                    'key': str(uuid.uuid4()),
-                    'readings': {"x": acc_x, "y": acc_y, "z": acc_z}
-                })
-                data.append({
-                    'asset': '{}{}'.format(asset_prefix, _handle['magnetometerSensorName']['value']),
-                    'timestamp': time_stamp,
-                    'key': str(uuid.uuid4()),
-                    'readings': {"x": mag_x, "y": mag_y, "z": mag_z}
-                })
+        if _handle['movementSensor']['value'] == 'true':
+            gyro_x, gyro_y, gyro_z, acc_x, acc_y, acc_z, mag_x, mag_y, mag_z, acc_range = tag.hex_movement_to_movement(
+                tag.char_read_hnd(_handle['characteristics']['movement']['data']['handle'], "movement"))
+            data.append({
+                'asset': '{}{}'.format(asset_prefix, _handle['gyroscopeSensorName']['value']),
+                'timestamp': time_stamp,
+                'key': str(uuid.uuid4()),
+                'readings': {"x": gyro_x, "y": gyro_y, "z": gyro_z}
+            })
+            data.append({
+                'asset': '{}{}'.format(asset_prefix, _handle['accelerometerSensorName']['value']),
+                'timestamp': time_stamp,
+                'key': str(uuid.uuid4()),
+                'readings': {"x": acc_x, "y": acc_y, "z": acc_z}
+            })
+            data.append({
+                'asset': '{}{}'.format(asset_prefix, _handle['magnetometerSensorName']['value']),
+                'timestamp': time_stamp,
+                'key': str(uuid.uuid4()),
+                'readings': {"x": mag_x, "y": mag_y, "z": mag_z}
+            })
 
-            if _handle['batteryData']['value'] == 'true':
-                battery_level = tag.get_battery_level(
-                    tag.char_read_hnd(_handle['characteristics']['battery']['data']['handle'], "battery"))
-                data.append({
-                    'asset': '{}{}'.format(asset_prefix, _handle['batterySensorName']['value']),
-                    'timestamp': time_stamp,
-                    'key': str(uuid.uuid4()),
-                    'readings': {"percentage": battery_level}
-                })
-            break
-        except (Exception, pexpect.exceptions.TIMEOUT) as ex:
-            raise exceptions.DataRetrievalError(str(ex))
+        if _handle['batteryData']['value'] == 'true':
+            battery_level = tag.get_battery_level(
+                tag.char_read_hnd(_handle['characteristics']['battery']['data']['handle'], "battery"))
+            data.append({
+                'asset': '{}{}'.format(asset_prefix, _handle['batterySensorName']['value']),
+                'timestamp': time_stamp,
+                'key': str(uuid.uuid4()),
+                'readings': {"percentage": battery_level}
+            })
+    except (Exception, RuntimeError, pexpect.exceptions.TIMEOUT) as ex:
+        _plugin_restart(bluetooth_adr, _restart_config)
+        raise exceptions.QuietError(str(ex))
 
-    _LOGGER.debug("SensorTagCC2650 {} reading: {}".format(bluetooth_adr, json.dumps(data)))
     return data
 
 
@@ -325,6 +323,8 @@ def plugin_reconfigure(handle, new_config):
     Raises:
     """
     # In this method, cannot use "handle" as it might have changed due to restart. Hence use "_handle".
+    global _handle
+
     bluetooth_adr = _handle['bluetoothAddress']['value']
     _LOGGER.info("Old config for CC2650POLL {} plugin {} \n new config {}".format(bluetooth_adr, _handle, new_config))
 
@@ -391,10 +391,7 @@ def plugin_shutdown(handle):
     _LOGGER.info('CC2650 {} poll plugin shut down.'.format(bluetooth_adr))
 
 
-def _plugin_restart(handle, restart_config):
+def _plugin_restart(bluetooth_adr, restart_config):
     """ Restarts plugin"""
-    bluetooth_adr = handle['bluetoothAddress']['value']
     _LOGGER.info("Restarting SensorTagCC2650 {} after timeout failure...".format(bluetooth_adr))
-    _plugin_stop(handle)
-    new_handle = plugin_init(restart_config)
-    return new_handle
+    plugin_init(restart_config)

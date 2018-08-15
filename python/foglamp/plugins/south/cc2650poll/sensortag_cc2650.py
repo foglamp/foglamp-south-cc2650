@@ -147,23 +147,24 @@ class SensorTagCC2650(object):
                 self.con = pexpect.spawn('gatttool -b ' + bluetooth_adr + ' --interactive')
             else:
                 self.con = SensorTagCC2650.con
-            self.con.expect('\[LE\]>', timeout=int(timeout))
+            self.con.expect('\[LE\]>', timeout=timeout)
             msg_debug = 'Attempting to discover SensorTagCC2650 {}. If swtiched off, please switch it on.'.\
                         format(self.bluetooth_adr)
             print(msg_debug)
             _LOGGER.info(msg_debug)
             self.con.sendline('connect')
-            self.con.expect('.*Connection successful.*\[LE\]>', timeout=int(timeout))
+            self.con.expect('.*Connection successful.*\[LE\]>', timeout=timeout)
             self.is_connected = True
             msg_success = 'SensorTagCC2650 {} connected successfully'.format(self.bluetooth_adr)
             print(msg_success)
             _LOGGER.info(msg_success)
         except (ExceptionPexpect, EOF, TIMEOUT, Exception) as ex:
             self.is_connected = False
+            self.con.sendline('quit')
             # TODO: Investigate why SensorTag goes to sleep often and find a suitable software solution to awake it.
             msg_failure = 'SensorTagCC2650 {} initial connection failure. Timeout={} seconds.'.format(self.bluetooth_adr, timeout)
             print(msg_failure)
-            _LOGGER.exception(msg_failure)
+            _LOGGER.error(msg_failure)
 
     def disconnect(self):
         if not self.is_connected:
@@ -171,12 +172,13 @@ class SensorTagCC2650(object):
             return
         try:
             self.con.sendline('disconnect')
+            self.con.sendline('quit')
             msg_success = 'SensorTagCC2650 {} disconnected'.format(self.bluetooth_adr)
             print(msg_success)
             _LOGGER.debug(msg_success)
             self.is_connected = False
         except Exception as ex:
-            _LOGGER.exception('SensorTagCC2650 {} connection failure. {}'.format(self.bluetooth_adr, str(ex)))
+            _LOGGER.error('SensorTagCC2650 {} connection failure. {}'.format(self.bluetooth_adr, str(ex)))
 
     def get_char_handle(self, uuid):
         timeout = SensorTagCC2650._CHAR_HANDLE_TIMEOUT
@@ -192,7 +194,7 @@ class SensorTagCC2650(object):
                 line = reading.decode().split('handle: ')[1]
                 rval = line.split()[0]
             except Exception as ex:
-                _LOGGER.exception('SensorTagCC2650 {} retrying fetching characteristics...'.format(self.bluetooth_adr))
+                _LOGGER.error('SensorTagCC2650 {} retrying fetching characteristics...'.format(self.bluetooth_adr))
                 time.sleep(.5)
             else:
                 break
@@ -216,7 +218,7 @@ class SensorTagCC2650(object):
             _LOGGER.info('SensorTagCC2650 {} notification handles {}'.format(
                 self.bluetooth_adr, ', '.join(notification_handles)))
         except Exception as ex:
-            _LOGGER.exception('SensorTagCC2650 {} retrying notification handles...'.format(self.bluetooth_adr))
+            _LOGGER.error('SensorTagCC2650 {} retrying notification handles...'.format(self.bluetooth_adr))
             time.sleep(.5)
         return notification_handles
 
