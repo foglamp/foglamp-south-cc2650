@@ -4,7 +4,7 @@
 # See: http://foglamp.readthedocs.io/
 # FOGLAMP_END
 
-""" Module for Sensortag CC2650 'poll' type plugin """
+""" Module for Sensortag CC2650 plugin """
 
 import copy
 import json
@@ -13,7 +13,7 @@ import threading
 
 from foglamp.common import logger
 from foglamp.plugins.common import utils
-from foglamp.plugins.south.cc2650poll.sensortag_cc2650 import *
+from foglamp.plugins.south.cc2650.sensortag_cc2650 import *
 from foglamp.services.south import exceptions
 
 __author__ = "Amarendra K Sinha"
@@ -23,9 +23,9 @@ __version__ = "${VERSION}"
 
 _DEFAULT_CONFIG = {
     'plugin': {
-         'description': 'TI SensorTag Polling South Plugin',
+         'description': 'TI SensorTag South Plugin',
          'type': 'string',
-         'default': 'cc2650poll'
+         'default': 'cc2650'
     },
     'assetPrefix': {
         'description': 'Asset prefix',
@@ -138,7 +138,7 @@ def plugin_info():
     """
 
     return {
-        'name': 'TI SensorTag CC2650 Poll plugin',
+        'name': 'TI SensorTag CC2650 plugin',
         'version': '1.0',
         'mode': 'poll',
         'type': 'south',
@@ -326,7 +326,7 @@ def plugin_reconfigure(handle, new_config):
     global _handle
 
     bluetooth_adr = _handle['bluetoothAddress']['value']
-    _LOGGER.info("Old config for CC2650POLL {} plugin {} \n new config {}".format(bluetooth_adr, _handle, new_config))
+    _LOGGER.info("Old config for CC2650 {} plugin {} \n new config {}".format(bluetooth_adr, _handle, new_config))
 
     # Find diff between old config and new config
     diff = utils.get_diff(_handle, new_config)
@@ -344,7 +344,7 @@ def plugin_reconfigure(handle, new_config):
         plugin_shutdown(_handle)
         new_handle = plugin_init(new_config)
         new_handle['restart'] = 'yes'
-        _LOGGER.info("Restarting CC2650POLL {} plugin due to change in configuration keys [{}]".format(bluetooth_adr, ', '.join(diff)))
+        _LOGGER.info("Restarting CC2650 {} plugin due to change in configuration keys [{}]".format(bluetooth_adr, ', '.join(diff)))
     elif 'pollInterval' in diff or 'connectionTimeout' in diff or 'shutdownThreshold' in diff:
         new_handle = copy.deepcopy(new_config)
         new_handle['restart'] = 'no'
@@ -388,7 +388,7 @@ def plugin_shutdown(handle):
     """
     bluetooth_adr = handle['bluetoothAddress']['value']
     _plugin_stop(handle)
-    _LOGGER.info('CC2650 {} poll plugin shut down.'.format(bluetooth_adr))
+    _LOGGER.info('CC2650 {} plugin shut down.'.format(bluetooth_adr))
 
 
 def _plugin_restart(bluetooth_adr, restart_config):

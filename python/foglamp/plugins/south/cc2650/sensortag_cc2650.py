@@ -4,7 +4,7 @@
 # See: http://foglamp.readthedocs.io/
 # FOGLAMP_END
 
-""" Common class for TI SensorTag CC2650 for both 'async' type and 'poll' type plugins """
+""" Common class for TI SensorTag CC2650 plugins """
 
 import pexpect
 from pexpect import ExceptionPexpect, EOF, TIMEOUT
