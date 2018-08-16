@@ -302,9 +302,12 @@ def plugin_poll(handle):
                 'key': str(uuid.uuid4()),
                 'readings': {"percentage": battery_level}
             })
-    except (Exception, RuntimeError, pexpect.exceptions.TIMEOUT) as ex:
+    except RuntimeError:
         _plugin_restart(bluetooth_adr, _restart_config)
         raise exceptions.QuietError(str(ex))
+    except (Exception, pexpect.exceptions.TIMEOUT) as ex:
+        _plugin_restart(bluetooth_adr, _restart_config)
+        raise exceptions.DataRetrievalError(str(ex))
 
     return data
 
