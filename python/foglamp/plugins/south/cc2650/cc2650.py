@@ -302,11 +302,11 @@ def plugin_poll(handle):
                 'key': str(uuid.uuid4()),
                 'readings': {"percentage": battery_level}
             })
-    except RuntimeError:
-        _plugin_restart(bluetooth_adr, _restart_config)
+    except RuntimeError as ex:
+        _plugin_restart(bluetooth_adr)
         raise exceptions.QuietError(str(ex))
     except (Exception, pexpect.exceptions.TIMEOUT) as ex:
-        _plugin_restart(bluetooth_adr, _restart_config)
+        _plugin_restart(bluetooth_adr)
         raise exceptions.DataRetrievalError(str(ex))
 
     return data
@@ -376,9 +376,9 @@ def _plugin_stop(handle):
             tag.char_write_cmd(handle['characteristics']['humidity']['configuration']['handle'], char_disable)
             tag.char_write_cmd(handle['characteristics']['pressure']['configuration']['handle'], char_disable)
             tag.char_write_cmd(handle['characteristics']['movement']['configuration']['handle'], movement_disable)
-
             tag.disconnect()
-            _LOGGER.info('SensorTagCC2650 {} Disconnected.'.format(bluetooth_adr))
+        handle.pop('tag', None)
+        _LOGGER.info('SensorTagCC2650 {} stopped.'.format(bluetooth_adr))
 
 
 def plugin_shutdown(handle):
@@ -394,7 +394,10 @@ def plugin_shutdown(handle):
     _LOGGER.info('CC2650 {} plugin shut down.'.format(bluetooth_adr))
 
 
-def _plugin_restart(bluetooth_adr, restart_config):
+def _plugin_restart(bluetooth_adr):
     """ Restarts plugin"""
+    global _handle, _restart_config
     _LOGGER.info("Restarting SensorTagCC2650 {} after timeout failure...".format(bluetooth_adr))
-    plugin_init(restart_config)
+    _plugin_stop(_handle)
+    plugin_init(_restart_config)
+
