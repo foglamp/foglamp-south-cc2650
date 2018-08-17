@@ -93,7 +93,7 @@ _DEFAULT_CONFIG = {
         'default': 'pressure',
     },
     'movementSensor': {
-        'description': 'Enable movement sensor',
+        'description': 'Enable gyroscope, accelerometer and magnetometer sensors',
         'type': 'boolean',
         'default': 'false',
     },
