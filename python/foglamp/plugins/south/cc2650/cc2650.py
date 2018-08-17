@@ -30,7 +30,7 @@ _DEFAULT_CONFIG = {
     'assetPrefix': {
         'description': 'Asset prefix',
         'type': 'string',
-        'default': 'CC2650/%M/'
+        'default': 'CC2650_%M_'
     },
     'pollInterval': {
         'description': 'The interval between poll calls to the SensorTag poll routine expressed in milliseconds.',
