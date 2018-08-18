@@ -7,9 +7,8 @@
 """ Module for Sensortag CC2650 plugin """
 
 import copy
-import json
+import time
 import uuid
-import threading
 
 from foglamp.common import logger
 from foglamp.plugins.common import utils
@@ -23,14 +22,16 @@ __version__ = "${VERSION}"
 
 _DEFAULT_CONFIG = {
     'plugin': {
-         'description': 'TI SensorTag South Plugin',
-         'type': 'string',
-         'default': 'cc2650'
+        'description': 'TI SensorTag South Plugin',
+        'type': 'string',
+        'default': 'cc2650',
+        'readonly': 'true'
     },
     'assetPrefix': {
         'description': 'Asset prefix',
         'type': 'string',
-        'default': 'CC2650_%M_'
+        'default': 'CC2650_%M_',
+        'order': '2'
     },
     'pollInterval': {
         'description': 'The interval between poll calls to the SensorTag poll routine expressed in milliseconds.',
@@ -40,7 +41,8 @@ _DEFAULT_CONFIG = {
     'bluetoothAddress': {
         'description': 'Bluetooth address',
         'type': 'string',
-        'default': 'B0:91:22:EA:79:04'
+        'default': 'B0:91:22:EA:79:04',
+        'order': '1'
     },
     'connectionTimeout': {
         'description': 'BLE connection timeout value in seconds',
@@ -125,7 +127,7 @@ _DEFAULT_CONFIG = {
 }
 _restart_config = None
 _handle = None
-_LOGGER = logger.setup(__name__, level=20)
+_LOGGER = logger.setup(__name__, level=logger.logging.INFO)
 
 
 def plugin_info():
@@ -335,25 +337,21 @@ def plugin_reconfigure(handle, new_config):
     diff = utils.get_diff(_handle, new_config)
 
     # Plugin should re-initialize and restart if key configuration is changed
-    if 'bluetoothAddress' in diff or \
-                'assetPrefix' in diff or \
-                'maxRetry' in diff or \
-                'temperatureSensor' in diff or \
-                'luminanceSensor' in diff or \
-                'humiditySensor' in diff or \
-                'pressureSensor' in diff or \
-                'movementSensor' in diff or \
-                'batteryData' in diff:
+    if 'bluetoothAddress' in diff:
         plugin_shutdown(_handle)
         new_handle = plugin_init(new_config)
         new_handle['restart'] = 'yes'
         _LOGGER.info("Restarting CC2650 {} plugin due to change in configuration keys [{}]".format(bluetooth_adr, ', '.join(diff)))
-    elif 'pollInterval' in diff or 'connectionTimeout' in diff or 'shutdownThreshold' in diff:
-        new_handle = copy.deepcopy(new_config)
-        new_handle['restart'] = 'no'
     else:
-        new_handle = copy.deepcopy(new_config)
-        new_handle['restart'] = 'no'
+        # If tag remains unchanged, just update _handle with new_config values and return the same
+        for h in diff:
+            _handle[h] = new_config[h]
+        _handle['restart'] = 'no'
+        new_handle = {}
+        for i, v in _handle.items():
+            if i != 'tag':
+                new_handle[i] = copy.deepcopy(v)
+        new_handle['tag'] = _handle['tag']  # tag copied separately as it does not behave well with copy.deepcopy()
     return new_handle
 
 

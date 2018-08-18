@@ -2,4 +2,4 @@
 foglamp-south-cc2650
 ====================
 
-FogLAMP South Plugin for TI SensorTag CC2650 Mode
+FogLAMP South Plugin for TI SensorTag CC2650

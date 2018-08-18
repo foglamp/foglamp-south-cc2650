@@ -148,7 +148,7 @@ class SensorTagCC2650(object):
             else:
                 self.con = SensorTagCC2650.con
             self.con.expect('\[LE\]>', timeout=timeout)
-            msg_debug = 'Attempting to discover SensorTagCC2650 {}. If swtiched off, please switch it on.'.\
+            msg_debug = 'Attempting to discover SensorTagCC2650 {}. If switched off, please switch it on.'.\
                         format(self.bluetooth_adr)
             print(msg_debug)
             _LOGGER.info(msg_debug)
