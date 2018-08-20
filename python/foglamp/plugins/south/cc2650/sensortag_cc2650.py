@@ -9,6 +9,7 @@
 import pexpect
 from pexpect import ExceptionPexpect, EOF, TIMEOUT
 import time
+import re
 from foglamp.common import logger
 
 
@@ -141,7 +142,7 @@ class SensorTagCC2650(object):
 
     def __init__(self, bluetooth_adr, timeout):
         try:
-            self.bluetooth_adr = bluetooth_adr
+            self.bluetooth_adr = self._validate_mac_address(bluetooth_adr)
             # If "con" var is set at class level, pick that one else create a new instance
             if SensorTagCC2650.con is None:
                 self.con = pexpect.spawn('gatttool -b ' + bluetooth_adr + ' --interactive')
@@ -158,6 +159,9 @@ class SensorTagCC2650(object):
             msg_success = 'SensorTagCC2650 {} connected successfully'.format(self.bluetooth_adr)
             print(msg_success)
             _LOGGER.info(msg_success)
+        except ValueError as ex:
+            print(str(ex))
+            _LOGGER.error(str(ex))
         except (ExceptionPexpect, EOF, TIMEOUT, Exception) as ex:
             self.is_connected = False
             self.con.sendline('quit')
@@ -165,6 +169,32 @@ class SensorTagCC2650(object):
             msg_failure = 'SensorTagCC2650 {} initial connection failure. Timeout={} seconds.'.format(self.bluetooth_adr, timeout)
             print(msg_failure)
             _LOGGER.error(msg_failure)
+
+    def _validate_mac_address(self, bluetooth_adr):
+        """
+        re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", bluetooth_adr.lower())
+        
+        it accepts 12 hex digits with either : or - or nothing as separators between pairs (but the separator must be uniform... either all separators are : or are all - or there is no separator).
+        This is the explanation:
+        
+        - [0-9a-f] means an hexadecimal digit
+        - {2} means that we want two of them
+        - [-:]? means either a dash or a colon but optional. Note that the dash as first char doesn't mean a range but only means itself. This subexpression is enclosed in parenthesis so it can be reused later as a back reference.
+        - [0-9a-f]{2} is another pair of hexadecimal digits
+        - \\1 this means that we want to match the same expression that we matched before as separator. This is what guarantees uniformity. Note that the regexp syntax is \1 but I'm using a regular string so backslash must be escaped by doubling it.
+        - [0-9a-f]{2} another pair of hex digits
+        - {4} the previous parenthesized block must be repeated exactly 4 times, giving a total of 6 pairs of digits: <pair> <sep> <pair> ( <same-sep> <pair> ) * 4
+        - $ The string must end right after them
+
+        Note that in Python re.match only checks starting at the start of the string and therefore a ^ at the beginning is not needed.
+
+        :param bluetooth_adr: 
+        :return: bluetooth_adr
+        :raises: ValueError
+        """
+        if not re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", bluetooth_adr.lower()):
+            raise ValueError("Invalid MAC address %s" % bluetooth_adr)
+        return bluetooth_adr
 
     def disconnect(self):
         if not self.is_connected:
