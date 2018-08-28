@@ -27,7 +27,13 @@ _DEFAULT_CONFIG = {
         'default': 'cc2650',
         'readonly': 'true'
     },
-    'assetPrefix': {
+    'bluetoothAddress': {
+        'description': 'Bluetooth address',
+        'type': 'string',
+        'default': 'B0:91:22:EA:79:04',
+        'order': '1'
+    },
+    'assetNamePrefix': {
         'description': 'Asset prefix',
         'type': 'string',
         'default': 'CC2650_%M_',
@@ -36,13 +42,8 @@ _DEFAULT_CONFIG = {
     'pollInterval': {
         'description': 'The interval between poll calls to the SensorTag poll routine expressed in milliseconds.',
         'type': 'integer',
-        'default': '1000'
-    },
-    'bluetoothAddress': {
-        'description': 'Bluetooth address',
-        'type': 'string',
-        'default': 'B0:91:22:EA:79:04',
-        'order': '1'
+        'default': '1000',
+        'order': '3'
     },
     'connectionTimeout': {
         'description': 'BLE connection timeout value in seconds',
@@ -52,77 +53,92 @@ _DEFAULT_CONFIG = {
     'shutdownThreshold': {
         'description': 'Time in seconds allowed for shutdown to complete the pending tasks',
         'type': 'integer',
-        'default': '10'
+        'default': '10',
+        'order': '4'
     },
     'temperatureSensor': {
         'description': 'Enable temperature sensor',
         'type': 'boolean',
         'default': 'true',
+        'order': '5'
     },
     'temperatureSensorName': {
         'description': 'Name of temperature sensor',
         'type': 'string',
         'default': 'temperature',
+        'order': '6'
     },
     'luminanceSensor': {
         'description': 'Enable luminance sensor',
         'type': 'boolean',
         'default': 'false',
+        'order': '7'
     },
     'luminanceSensorName': {
         'description': 'Name of luminance sensor',
         'type': 'string',
         'default': 'luminance',
+        'order': '8'
     },
     'humiditySensor': {
         'description': 'Enable humidity sensor',
         'type': 'boolean',
         'default': 'false',
+        'order': '9'
     },
     'humiditySensorName': {
         'description': 'Name of humidity sensor',
         'type': 'string',
         'default': 'humidity',
+        'order': '10'
     },
     'pressureSensor': {
         'description': 'Enable pressure sensor',
         'type': 'boolean',
         'default': 'false',
+        'order': '11'
     },
     'pressureSensorName': {
         'description': 'Name of pressure sensor',
         'type': 'string',
         'default': 'pressure',
+        'order': '12'
     },
     'movementSensor': {
         'description': 'Enable gyroscope, accelerometer and magnetometer sensors',
         'type': 'boolean',
         'default': 'false',
+        'order': '13'
     },
     'gyroscopeSensorName': {
         'description': 'Name of gyroscope sensor',
         'type': 'string',
         'default': 'gyroscope',
+        'order': '14'
     },
     'accelerometerSensorName': {
         'description': 'Name of accelerometer sensor',
         'type': 'string',
         'default': 'accelerometer',
+        'order': '15'
     },
     'magnetometerSensorName': {
         'description': 'Name of magnetometer sensor',
         'type': 'string',
         'default': 'magnetometer',
+        'order': '16'
     },
     'batteryData': {
         'description': 'Get battery data',
         'type': 'boolean',
         'default': 'false',
+        'order': '17'
     },
     'batterySensorName': {
         'description': 'Name of battery sensor',
         'type': 'string',
         'default': 'battery',
+        'order': '18'
     }
 }
 _restart_config = None
@@ -218,7 +234,7 @@ def plugin_poll(handle):
 
     bluetooth_adr = _handle['bluetoothAddress']['value']
     tag = _handle['tag']
-    asset_prefix = '{}'.format(_handle['assetPrefix']['value']).replace('%M', bluetooth_adr)
+    asset_prefix = '{}'.format(_handle['assetNamePrefix']['value']).replace('%M', bluetooth_adr)
 
     try:
         if not tag.is_connected:
