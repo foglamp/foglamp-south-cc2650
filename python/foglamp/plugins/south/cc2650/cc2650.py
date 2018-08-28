@@ -36,7 +36,7 @@ _DEFAULT_CONFIG = {
     'assetNamePrefix': {
         'description': 'Asset prefix',
         'type': 'string',
-        'default': 'CC2650_%M_',
+        'default': 'CC2650/%M/',
         'order': '2'
     },
     'pollInterval': {
