@@ -43,12 +43,15 @@ _DEFAULT_CONFIG = {
         'description': 'The interval between poll calls to the SensorTag poll routine expressed in milliseconds.',
         'type': 'integer',
         'default': '1000',
-        'order': '3'
+        'order': '3',
+        'minimum': '500'
     },
     'connectionTimeout': {
         'description': 'BLE connection timeout value in seconds',
         'type': 'integer',
-        'default': '3'
+        'default': '3',
+        'minimum': '2',
+        'maximum': '5'
     },
     'shutdownThreshold': {
         'description': 'Time in seconds allowed for shutdown to complete the pending tasks',
