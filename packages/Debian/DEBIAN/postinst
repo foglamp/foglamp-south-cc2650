@@ -28,19 +28,13 @@
 set -e
 
 install_deps () {
-    pip3 install -Ir /usr/local/foglamp/python/requirements-cc2650poll.txt --no-cache-dir
+    pip3 install -Ir /usr/local/foglamp/python/requirements-cc2650.txt --no-cache-dir
 }
 
 set_files_ownership () {
-    chown -R root:root /usr/local/foglamp/python/foglamp/plugins/south/cc2650poll
-}
-
-add_service () {
-    output=$(curl -sX POST http://localhost:8081/foglamp/service -d '{"name": "CC2650 SensorTag Poll", "type": "south", "plugin": "cc2650poll", "enabled": true}')
-    echo ${output}
+    chown -R root:root /usr/local/foglamp/python/foglamp/plugins/south/cc2650
 }
 
 install_deps
 set_files_ownership
-add_service
-echo "CC2650 SensorTag Poll plugin installed."
+echo "CC2650 SensorTag plugin installed."
