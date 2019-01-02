@@ -31,117 +31,137 @@ _DEFAULT_CONFIG = {
         'description': 'Bluetooth address',
         'type': 'string',
         'default': 'B0:91:22:EA:79:04',
-        'order': '1'
+        'order': '1',
+        'displayName': 'Bluetooth Address'
     },
     'assetNamePrefix': {
-        'description': 'Asset prefix',
+        'description': 'Asset name prefix, %M will be replaced by bluetooth address',
         'type': 'string',
         'default': 'CC2650/%M/',
-        'order': '2'
+        'order': '2',
+        'displayName': 'Asset Name Prefix'
     },
     'pollInterval': {
         'description': 'The interval between poll calls to the SensorTag poll routine expressed in milliseconds.',
         'type': 'integer',
         'default': '1000',
         'order': '3',
-        'minimum': '500'
+        'minimum': '500',
+        'displayName': 'Poll Interval'
+    },
+    'shutdownThreshold': {
+        'description': 'Time in seconds allowed for shutdown to complete the pending tasks',
+        'type': 'integer',
+        'default': '10',
+        'order': '4',
+        'displayName': 'Shutdown Threshold'
     },
     'connectionTimeout': {
         'description': 'BLE connection timeout value in seconds',
         'type': 'integer',
         'default': '3',
         'minimum': '2',
-        'maximum': '5'
-    },
-    'shutdownThreshold': {
-        'description': 'Time in seconds allowed for shutdown to complete the pending tasks',
-        'type': 'integer',
-        'default': '10',
-        'order': '4'
+        'maximum': '5',
+        'order': '5',
+        'displayName': 'Connection Timeout'
     },
     'temperatureSensor': {
         'description': 'Enable temperature sensor',
         'type': 'boolean',
         'default': 'true',
-        'order': '5'
+        'order': '6',
+        'displayName': 'Temperature Sensor'
     },
     'temperatureSensorName': {
         'description': 'Name of temperature sensor',
         'type': 'string',
         'default': 'temperature',
-        'order': '6'
+        'order': '7',
+        'displayName': 'Temperature Sensor Name'
     },
     'luminanceSensor': {
         'description': 'Enable luminance sensor',
         'type': 'boolean',
         'default': 'false',
-        'order': '7'
+        'order': '8',
+        'displayName': 'Luminance Sensor'
     },
     'luminanceSensorName': {
         'description': 'Name of luminance sensor',
         'type': 'string',
         'default': 'luminance',
-        'order': '8'
+        'order': '9',
+        'displayName': 'Luminance Sensor Name'
     },
     'humiditySensor': {
         'description': 'Enable humidity sensor',
         'type': 'boolean',
         'default': 'false',
-        'order': '9'
+        'order': '10',
+        'displayName': 'Humidity Sensor'
     },
     'humiditySensorName': {
         'description': 'Name of humidity sensor',
         'type': 'string',
         'default': 'humidity',
-        'order': '10'
+        'order': '11',
+        'displayName': 'Humidity Sensor Name'
     },
     'pressureSensor': {
         'description': 'Enable pressure sensor',
         'type': 'boolean',
         'default': 'false',
-        'order': '11'
+        'order': '12',
+        'displayName': 'Pressure Sensor'
     },
     'pressureSensorName': {
         'description': 'Name of pressure sensor',
         'type': 'string',
         'default': 'pressure',
-        'order': '12'
+        'order': '13',
+        'displayName': 'Pressure Sensor Name'
     },
     'movementSensor': {
         'description': 'Enable gyroscope, accelerometer and magnetometer sensors',
         'type': 'boolean',
         'default': 'false',
-        'order': '13'
+        'order': '14',
+        'displayName': 'Movement Sensor'
     },
     'gyroscopeSensorName': {
         'description': 'Name of gyroscope sensor',
         'type': 'string',
         'default': 'gyroscope',
-        'order': '14'
+        'order': '15',
+        'displayName': 'Gyroscope Sensor Name'
     },
     'accelerometerSensorName': {
         'description': 'Name of accelerometer sensor',
         'type': 'string',
         'default': 'accelerometer',
-        'order': '15'
+        'order': '16',
+        'displayName': 'Accelerometer Sensor Name'
     },
     'magnetometerSensorName': {
         'description': 'Name of magnetometer sensor',
         'type': 'string',
         'default': 'magnetometer',
-        'order': '16'
+        'order': '17',
+        'displayName': 'Magnetometer Sensor Name'
     },
     'batteryData': {
         'description': 'Get battery data',
         'type': 'boolean',
         'default': 'false',
-        'order': '17'
+        'order': '18',
+        'displayName': 'Battery Data'
     },
     'batterySensorName': {
         'description': 'Name of battery sensor',
         'type': 'string',
         'default': 'battery',
-        'order': '18'
+        'order': '19',
+        'displayName': 'Battery Sensor Name'
     }
 }
 _restart_config = None
