@@ -16,7 +16,7 @@ from foglamp.plugins.south.cc2650.sensortag_cc2650 import *
 from foglamp.services.south import exceptions
 
 __author__ = "Amarendra K Sinha"
-__copyright__ = "Copyright (c) 2017 OSIsoft, LLC"
+__copyright__ = "Copyright (c) 2018 Dianomic Systems"
 __license__ = "Apache 2.0"
 __version__ = "${VERSION}"
 
@@ -40,14 +40,6 @@ _DEFAULT_CONFIG = {
         'default': 'CC2650/%M/',
         'order': '2',
         'displayName': 'Asset Name Prefix'
-    },
-    'pollInterval': {
-        'description': 'The interval between poll calls to the SensorTag poll routine expressed in milliseconds.',
-        'type': 'integer',
-        'default': '1000',
-        'order': '3',
-        'minimum': '500',
-        'displayName': 'Poll Interval'
     },
     'shutdownThreshold': {
         'description': 'Time in seconds allowed for shutdown to complete the pending tasks',
@@ -379,13 +371,11 @@ def plugin_reconfigure(handle, new_config):
     if 'bluetoothAddress' in diff:
         plugin_shutdown(_handle)
         new_handle = plugin_init(new_config)
-        new_handle['restart'] = 'yes'
         _LOGGER.info("Restarting CC2650 {} plugin due to change in configuration keys [{}]".format(bluetooth_adr, ', '.join(diff)))
     else:
         # If tag remains unchanged, just update _handle with new_config values and return the same
         for h in diff:
             _handle[h] = new_config[h]
-        _handle['restart'] = 'no'
         new_handle = {}
         for i, v in _handle.items():
             if i != 'tag':

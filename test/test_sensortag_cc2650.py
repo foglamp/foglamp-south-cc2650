@@ -14,7 +14,7 @@ from foglamp.plugins.south.cc2650 import sensortag_cc2650
 from foglamp.plugins.south.cc2650.sensortag_cc2650 import SensorTagCC2650
 
 __author__ = "Amarendra K Sinha"
-__copyright__ = "Copyright (c) 2017 OSIsoft, LLC"
+__copyright__ = "Copyright (c) 2018 Dianomic Systems"
 __license__ = "Apache 2.0"
 __version__ = "${VERSION}"
 
