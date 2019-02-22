@@ -13,7 +13,6 @@ import uuid
 from foglamp.common import logger
 from foglamp.plugins.common import utils
 from foglamp.plugins.south.cc2650.sensortag_cc2650 import *
-from foglamp.services.south import exceptions
 
 __author__ = "Amarendra K Sinha"
 __copyright__ = "Copyright (c) 2018 Dianomic Systems"
@@ -335,12 +334,9 @@ def plugin_poll(handle):
                 'key': str(uuid.uuid4()),
                 'readings': {"percentage": battery_level}
             })
-    except RuntimeError as ex:
+    except (Exception, RuntimeError, pexpect.exceptions.TIMEOUT) as ex:
         _plugin_restart(bluetooth_adr)
-        raise exceptions.QuietError(str(ex))
-    except (Exception, pexpect.exceptions.TIMEOUT) as ex:
-        _plugin_restart(bluetooth_adr)
-        raise exceptions.DataRetrievalError(str(ex))
+        raise ex
 
     return data
 
