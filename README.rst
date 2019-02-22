@@ -1,5 +1,5 @@
-========================
-foglamp-south-cc2650poll
-========================
+====================
+foglamp-south-cc2650
+====================
 
-FogLAMP South Plugin for TI SensorTag CC2650 Poll Mode
+FogLAMP South Plugin for TI SensorTag CC2650

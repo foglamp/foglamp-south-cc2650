@@ -4,30 +4,30 @@
 # See: http://foglamp.readthedocs.io/
 # FOGLAMP_END
 
-"""Unit test for foglamp.plugins.south.cc2650poll / cc2650poll.py"""
+"""Unit test for foglamp.plugins.south.cc2650/cc2650.py"""
 import copy
 import pytest
 from unittest.mock import call
 
-from foglamp.plugins.south.cc2650poll.sensortag_cc2650 import SensorTagCC2650
-from foglamp.plugins.south.cc2650poll import cc2650poll
+from foglamp.plugins.south.cc2650.sensortag_cc2650 import SensorTagCC2650
+from foglamp.plugins.south.cc2650 import cc2650
 
 __author__ = "Amarendra K Sinha"
-__copyright__ = "Copyright (c) 2017 OSIsoft, LLC"
+__copyright__ = "Copyright (c) 2018 Dianomic Systems"
 __license__ = "Apache 2.0"
 __version__ = "${VERSION}"
 
 
 _NEW_CONFIG = {
     'plugin': {
-        'description': 'TI SensorTag Polling South Plugin',
+        'description': 'TI SensorTag South Plugin',
         'type': 'string',
-        'default': 'cc2650poll'
+        'default': 'cc2650'
     },
     'pollInterval': {
         'description': 'The interval between poll calls to the SensorTag poll routine expressed in milliseconds.',
         'type': 'integer',
-        'default': '500'
+        'default': '1000'
     },
     'bluetoothAddress': {
         'description': 'Bluetooth address',
@@ -37,45 +37,115 @@ _NEW_CONFIG = {
     'connectionTimeout': {
         'description': 'BLE connection timeout value in seconds',
         'type': 'integer',
-        'default': '10'
+        'default': '3'
     },
     'shutdownThreshold': {
         'description': 'Time in seconds allowed for shutdown to complete the pending tasks',
         'type': 'integer',
         'default': '10'
+    },
+    'temperatureSensor': {
+        'description': 'Enable temperature sensor',
+        'type': 'boolean',
+        'default': 'true',
+    },
+    'temperatureSensorName': {
+        'description': 'Name of temperature sensor',
+        'type': 'string',
+        'default': 'temperature',
+    },
+    'luminanceSensor': {
+        'description': 'Enable luminance sensor',
+        'type': 'boolean',
+        'default': 'false',
+    },
+    'luminanceSensorName': {
+        'description': 'Name of luminance sensor',
+        'type': 'string',
+        'default': 'luminance',
+    },
+    'humiditySensor': {
+        'description': 'Enable humidity sensor',
+        'type': 'boolean',
+        'default': 'false',
+    },
+    'humiditySensorName': {
+        'description': 'Name of humidity sensor',
+        'type': 'string',
+        'default': 'humidity',
+    },
+    'pressureSensor': {
+        'description': 'Enable pressure sensor',
+        'type': 'boolean',
+        'default': 'false',
+    },
+    'pressureSensorName': {
+        'description': 'Name of pressure sensor',
+        'type': 'string',
+        'default': 'pressure',
+    },
+    'movementSensor': {
+        'description': 'Enable movement sensor',
+        'type': 'boolean',
+        'default': 'false',
+    },
+    'gyroscopeSensorName': {
+        'description': 'Name of gyroscope sensor',
+        'type': 'string',
+        'default': 'gyroscope',
+    },
+    'accelerometerSensorName': {
+        'description': 'Name of accelerometer sensor',
+        'type': 'string',
+        'default': 'accelerometer',
+    },
+    'magnetometerSensorName': {
+        'description': 'Name of magnetometer sensor',
+        'type': 'string',
+        'default': 'magnetometer',
+    },
+    'batteryData': {
+        'description': 'Get battery data',
+        'type': 'boolean',
+        'default': 'false',
+    },
+    'batterySensorName': {
+        'description': 'Name of battery sensor',
+        'type': 'string',
+        'default': 'battery',
     }
 }
 
 
 @pytest.allure.feature("unit")
-@pytest.allure.story("plugin", "south", "cc2650poll")
+@pytest.allure.story("plugin", "south", "cc2650")
 def test_plugin_contract():
     # Evaluates if the plugin has all the required methods
-    assert callable(getattr(cc2650poll, 'plugin_info'))
-    assert callable(getattr(cc2650poll, 'plugin_init'))
-    assert callable(getattr(cc2650poll, 'plugin_poll'))
-    assert callable(getattr(cc2650poll, 'plugin_shutdown'))
-    assert callable(getattr(cc2650poll, 'plugin_reconfigure'))
+    assert callable(getattr(cc2650, 'plugin_info'))
+    assert callable(getattr(cc2650, 'plugin_init'))
+    assert callable(getattr(cc2650, 'plugin_poll'))
+    assert callable(getattr(cc2650, 'plugin_shutdown'))
+    assert callable(getattr(cc2650, 'plugin_reconfigure'))
 
 
 @pytest.allure.feature("unit")
-@pytest.allure.story("plugin", "south", "cc2650poll")
+@pytest.allure.story("plugin", "south", "cc2650")
 def test_plugin_info():
-    assert cc2650poll.plugin_info() == {
-        'name': 'TI SensorTag CC2650 Poll plugin',
-        'version': '1.0',
+    assert cc2650.plugin_info() == {
+        'name': 'TI SensorTag CC2650 plugin',
+        'version': '1.5.0',
         'mode': 'poll',
         'type': 'south',
         'interface': '1.0',
-        'config': cc2650poll._DEFAULT_CONFIG
+        'config': cc2650._DEFAULT_CONFIG
     }
 
 
 @pytest.allure.feature("unit")
-@pytest.allure.story("plugin", "south", "cc2650poll")
+@pytest.allure.story("plugin", "south", "cc2650")
 def test_plugin_init(mocker):
     # GIVEN
-    config = copy.deepcopy(cc2650poll._DEFAULT_CONFIG)
+    config = copy.deepcopy(cc2650._DEFAULT_CONFIG)
     config['bluetoothAddress']['value'] = config['bluetoothAddress']['default']
     config['connectionTimeout']['value'] = config['connectionTimeout']['default']
     config['shutdownThreshold']['value'] = config['shutdownThreshold']['default']
@@ -83,10 +153,10 @@ def test_plugin_init(mocker):
     mocker.patch.object(SensorTagCC2650, "__init__", return_value=None)
     mocker.patch.object(SensorTagCC2650, "is_connected", True)
     mocker.patch.object(SensorTagCC2650, "get_char_handle", return_value=0x0000)
-    log_info = mocker.patch.object(cc2650poll._LOGGER, "info")
+    log_info = mocker.patch.object(cc2650._LOGGER, "info")
 
     # WHEN
-    returned_config = cc2650poll.plugin_init(config)
+    returned_config = cc2650.plugin_init(config)
 
     # THEN
     assert "characteristics" in returned_config
@@ -95,24 +165,24 @@ def test_plugin_init(mocker):
 
 
 @pytest.allure.feature("unit")
-@pytest.allure.story("plugin", "south", "cc2650poll")
+@pytest.allure.story("plugin", "south", "cc2650")
 def test_plugin_poll(mocker):
     # GIVEN
-    config = copy.deepcopy(cc2650poll._DEFAULT_CONFIG)
+    config = copy.deepcopy(cc2650._DEFAULT_CONFIG)
     config['bluetoothAddress']['value'] = config['bluetoothAddress']['default']
     config['connectionTimeout']['value'] = config['connectionTimeout']['default']
     config['shutdownThreshold']['value'] = config['shutdownThreshold']['default']
     config['pollInterval']['value'] = config['pollInterval']['default']
 
-    log_info = mocker.patch.object(cc2650poll._LOGGER, "info")
-    log_debug = mocker.patch.object(cc2650poll._LOGGER, "debug")
+    log_info = mocker.patch.object(cc2650._LOGGER, "info")
+    log_debug = mocker.patch.object(cc2650._LOGGER, "debug")
 
     mocker.patch.object(SensorTagCC2650, "__init__", return_value=None)
     mocker.patch.object(SensorTagCC2650, "is_connected", True)
     mocker.patch.object(SensorTagCC2650, "get_char_handle", return_value=0x0000)
     mocker.patch.object(SensorTagCC2650, "reading_iterations", 1)
 
-    returned_config = cc2650poll.plugin_init(config)
+    returned_config = cc2650.plugin_init(config)
 
     mocker.patch.object(returned_config['tag'], "char_read_hnd", return_value=None)
     mocker.patch.object(returned_config['tag'], "char_write_cmd", return_value=None)
@@ -130,7 +200,7 @@ def test_plugin_poll(mocker):
     ]
 
     # WHEN
-    data = cc2650poll.plugin_poll(returned_config)
+    data = cc2650.plugin_poll(returned_config)
 
     # THEN
     assert "characteristics" in returned_config
@@ -147,10 +217,10 @@ def test_plugin_poll(mocker):
 
 
 @pytest.allure.feature("unit")
-@pytest.allure.story("plugin", "south", "cc2650poll")
+@pytest.allure.story("plugin", "south", "cc2650")
 def test_plugin_poll_tag_not_in_handle():
     # GIVEN
-    config = copy.deepcopy(cc2650poll._DEFAULT_CONFIG)
+    config = copy.deepcopy(cc2650._DEFAULT_CONFIG)
     config['bluetoothAddress']['value'] = config['bluetoothAddress']['default']
     config['connectionTimeout']['value'] = config['connectionTimeout']['default']
     config['shutdownThreshold']['value'] = config['shutdownThreshold']['default']
@@ -159,14 +229,14 @@ def test_plugin_poll_tag_not_in_handle():
     # WHEN tag is not in handle
     # THEN
     with pytest.raises(RuntimeError):
-        cc2650poll.plugin_poll(config)
+        cc2650.plugin_poll(config)
 
 
 @pytest.allure.feature("unit")
-@pytest.allure.story("plugin", "south", "cc2650poll")
+@pytest.allure.story("plugin", "south", "cc2650")
 def test_plugin_poll_exception(mocker):
     # GIVEN
-    config = copy.deepcopy(cc2650poll._DEFAULT_CONFIG)
+    config = copy.deepcopy(cc2650._DEFAULT_CONFIG)
     config['bluetoothAddress']['value'] = config['bluetoothAddress']['default']
     config['connectionTimeout']['value'] = config['connectionTimeout']['default']
     config['shutdownThreshold']['value'] = config['shutdownThreshold']['default']
@@ -176,19 +246,19 @@ def test_plugin_poll_exception(mocker):
     mocker.patch.object(SensorTagCC2650, "get_char_handle", return_value=0x0000)
     mocker.patch.object(SensorTagCC2650, "reading_iterations", 1)
 
-    returned_config = cc2650poll.plugin_init(config)
+    returned_config = cc2650.plugin_init(config)
 
     # WHEN
     # THEN
     with pytest.raises(RuntimeError):
-        cc2650poll.plugin_poll(returned_config)
+        cc2650.plugin_poll(returned_config)
 
 
 @pytest.allure.feature("unit")
-@pytest.allure.story("plugin", "south", "cc2650poll")
+@pytest.allure.story("plugin", "south", "cc2650")
 def test_plugin_poll_data_retrieval_error(mocker):
     # GIVEN
-    config = copy.deepcopy(cc2650poll._DEFAULT_CONFIG)
+    config = copy.deepcopy(cc2650._DEFAULT_CONFIG)
     config['bluetoothAddress']['value'] = config['bluetoothAddress']['default']
     config['connectionTimeout']['value'] = config['connectionTimeout']['default']
     config['shutdownThreshold']['value'] = config['shutdownThreshold']['default']
@@ -197,15 +267,15 @@ def test_plugin_poll_data_retrieval_error(mocker):
     mocker.patch.object(SensorTagCC2650, "is_connected", True)
     mocker.patch.object(SensorTagCC2650, "get_char_handle", return_value=0x0000)
     mocker.patch.object(SensorTagCC2650, "reading_iterations", 1)
-    log_exception = mocker.patch.object(cc2650poll._LOGGER, "exception")
-    log_info = mocker.patch.object(cc2650poll._LOGGER, "info")
+    log_exception = mocker.patch.object(cc2650._LOGGER, "exception")
+    log_info = mocker.patch.object(cc2650._LOGGER, "info")
 
-    returned_config = cc2650poll.plugin_init(config)
+    returned_config = cc2650.plugin_init(config)
 
     # WHEN
     from foglamp.services.south import exceptions
     with pytest.raises(exceptions.DataRetrievalError):
-        data = cc2650poll.plugin_poll(returned_config)
+        data = cc2650.plugin_poll(returned_config)
 
     # THEN
     log_info.assert_called_once_with('SensorTagCC2650 B0:91:22:EA:79:04 Polling initialized')
@@ -213,21 +283,21 @@ def test_plugin_poll_data_retrieval_error(mocker):
 
 
 @pytest.allure.feature("unit")
-@pytest.allure.story("plugin", "south", "cc2650poll")
+@pytest.allure.story("plugin", "south", "cc2650")
 def test_plugin_reconfigure(mocker):
     # GIVEN
-    config = copy.deepcopy(cc2650poll._DEFAULT_CONFIG)
+    config = copy.deepcopy(cc2650._DEFAULT_CONFIG)
     config['bluetoothAddress']['value'] = config['bluetoothAddress']['default']
     config['connectionTimeout']['value'] = config['connectionTimeout']['default']
     config['shutdownThreshold']['value'] = config['shutdownThreshold']['default']
     config['pollInterval']['value'] = config['pollInterval']['default']
-    log_info = mocker.patch.object(cc2650poll._LOGGER, "info")
+    log_info = mocker.patch.object(cc2650._LOGGER, "info")
 
     mocker.patch.object(SensorTagCC2650, "__init__", return_value=None)
     mocker.patch.object(SensorTagCC2650, "is_connected", True)
     mocker.patch.object(SensorTagCC2650, "get_char_handle", return_value=0x0000)
     mocker.patch.object(SensorTagCC2650, "disconnect", return_value=None)
-    returned_old_config = cc2650poll.plugin_init(config)
+    returned_old_config = cc2650.plugin_init(config)
 
     # Only bluetoothAddress is changed
     config2 = copy.deepcopy(_NEW_CONFIG)
@@ -236,10 +306,10 @@ def test_plugin_reconfigure(mocker):
     config2['shutdownThreshold']['value'] = config2['shutdownThreshold']['default']
     config2['pollInterval']['value'] = config2['pollInterval']['default']
 
-    pstop = mocker.patch.object(cc2650poll, '_plugin_stop', return_value=True)
+    pstop = mocker.patch.object(cc2650, '_plugin_stop', return_value=True)
 
     # WHEN
-    new_config = cc2650poll.plugin_reconfigure(returned_old_config, config2)
+    new_config = cc2650.plugin_reconfigure(returned_old_config, config2)
 
     # THEN
     for key, value in new_config.items():
@@ -263,30 +333,30 @@ def test_plugin_reconfigure(mocker):
 
 
 @pytest.allure.feature("unit")
-@pytest.allure.story("plugin", "south", "cc2650poll")
+@pytest.allure.story("plugin", "south", "cc2650")
 def test_plugin_reconfigure_elif(mocker):
     # GIVEN
-    config = copy.deepcopy(cc2650poll._DEFAULT_CONFIG)
+    config = copy.deepcopy(cc2650._DEFAULT_CONFIG)
     config['bluetoothAddress']['value'] = config['bluetoothAddress']['default']
     config['connectionTimeout']['value'] = config['connectionTimeout']['default']
     config['shutdownThreshold']['value'] = config['shutdownThreshold']['default']
     config['pollInterval']['value'] = config['pollInterval']['default']
-    log_info = mocker.patch.object(cc2650poll._LOGGER, "info")
+    log_info = mocker.patch.object(cc2650._LOGGER, "info")
 
     mocker.patch.object(SensorTagCC2650, "__init__", return_value=None)
     mocker.patch.object(SensorTagCC2650, "is_connected", True)
     mocker.patch.object(SensorTagCC2650, "get_char_handle", return_value=0x0000)
     mocker.patch.object(SensorTagCC2650, "disconnect", return_value=None)
-    returned_old_config = cc2650poll.plugin_init(config)
+    returned_old_config = cc2650.plugin_init(config)
 
     # Only shutdownThreshold is changed
     config2 = copy.deepcopy(config)
     config2['shutdownThreshold']['value'] = '30'
 
-    pstop = mocker.patch.object(cc2650poll, '_plugin_stop', return_value=True)
+    pstop = mocker.patch.object(cc2650, '_plugin_stop', return_value=True)
 
     # WHEN
-    new_config = cc2650poll.plugin_reconfigure(returned_old_config, config2)
+    new_config = cc2650.plugin_reconfigure(returned_old_config, config2)
 
     # THEN
     for key, value in new_config.items():
@@ -307,29 +377,29 @@ def test_plugin_reconfigure_elif(mocker):
 
 
 @pytest.allure.feature("unit")
-@pytest.allure.story("plugin", "south", "cc2650poll")
+@pytest.allure.story("plugin", "south", "cc2650")
 def test_plugin_reconfigure_else(mocker):
     # GIVEN
-    config = copy.deepcopy(cc2650poll._DEFAULT_CONFIG)
+    config = copy.deepcopy(cc2650._DEFAULT_CONFIG)
     config['bluetoothAddress']['value'] = config['bluetoothAddress']['default']
     config['connectionTimeout']['value'] = config['connectionTimeout']['default']
     config['shutdownThreshold']['value'] = config['shutdownThreshold']['default']
     config['pollInterval']['value'] = config['pollInterval']['default']
-    log_info = mocker.patch.object(cc2650poll._LOGGER, "info")
+    log_info = mocker.patch.object(cc2650._LOGGER, "info")
 
     mocker.patch.object(SensorTagCC2650, "__init__", return_value=None)
     mocker.patch.object(SensorTagCC2650, "is_connected", True)
     mocker.patch.object(SensorTagCC2650, "get_char_handle", return_value=0x0000)
     mocker.patch.object(SensorTagCC2650, "disconnect", return_value=None)
-    returned_old_config = cc2650poll.plugin_init(config)
+    returned_old_config = cc2650.plugin_init(config)
 
     # Only shutdownThreshold is changed
     config2 = copy.deepcopy(config)
 
-    pstop = mocker.patch.object(cc2650poll, '_plugin_stop', return_value=True)
+    pstop = mocker.patch.object(cc2650, '_plugin_stop', return_value=True)
 
     # WHEN
-    new_config = cc2650poll.plugin_reconfigure(returned_old_config, config2)
+    new_config = cc2650.plugin_reconfigure(returned_old_config, config2)
 
     # THEN
     for key, value in new_config.items():
@@ -348,25 +418,25 @@ def test_plugin_reconfigure_else(mocker):
 
 
 @pytest.allure.feature("unit")
-@pytest.allure.story("plugin", "south", "cc2650poll")
+@pytest.allure.story("plugin", "south", "cc2650")
 def test_plugin__stop(mocker):
     # GIVEN
-    config = copy.deepcopy(cc2650poll._DEFAULT_CONFIG)
+    config = copy.deepcopy(cc2650._DEFAULT_CONFIG)
     config['bluetoothAddress']['value'] = config['bluetoothAddress']['default']
     config['connectionTimeout']['value'] = config['connectionTimeout']['default']
     config['shutdownThreshold']['value'] = config['shutdownThreshold']['default']
     config['pollInterval']['value'] = config['pollInterval']['default']
-    log_info = mocker.patch.object(cc2650poll._LOGGER, "info")
+    log_info = mocker.patch.object(cc2650._LOGGER, "info")
 
     mocker.patch.object(SensorTagCC2650, "__init__", return_value=None)
     mocker.patch.object(SensorTagCC2650, "is_connected", True)
     mocker.patch.object(SensorTagCC2650, "get_char_handle", return_value=0x0000)
     mocker.patch.object(SensorTagCC2650, "disconnect", return_value=None)
 
-    returned_config = cc2650poll.plugin_init(config)
+    returned_config = cc2650.plugin_init(config)
 
     # WHEN
-    cc2650poll._plugin_stop(returned_config)
+    cc2650._plugin_stop(returned_config)
 
     # THEN
     calls = [call('SensorTagCC2650 {} Disconnected.'.format(config['bluetoothAddress']['value'])),
@@ -375,25 +445,25 @@ def test_plugin__stop(mocker):
 
 
 @pytest.allure.feature("unit")
-@pytest.allure.story("plugin", "south", "cc2650poll")
+@pytest.allure.story("plugin", "south", "cc2650")
 def test_plugin_shutdown(mocker):
     # GIVEN
-    config = copy.deepcopy(cc2650poll._DEFAULT_CONFIG)
+    config = copy.deepcopy(cc2650._DEFAULT_CONFIG)
     config['bluetoothAddress']['value'] = config['bluetoothAddress']['default']
     config['connectionTimeout']['value'] = config['connectionTimeout']['default']
     config['shutdownThreshold']['value'] = config['shutdownThreshold']['default']
     config['pollInterval']['value'] = config['pollInterval']['default']
-    log_info = mocker.patch.object(cc2650poll._LOGGER, "info")
+    log_info = mocker.patch.object(cc2650._LOGGER, "info")
 
     mocker.patch.object(SensorTagCC2650, "__init__", return_value=None)
     mocker.patch.object(SensorTagCC2650, "is_connected", True)
     mocker.patch.object(SensorTagCC2650, "get_char_handle", return_value=0x0000)
     mocker.patch.object(SensorTagCC2650, "disconnect", return_value=None)
 
-    returned_config = cc2650poll.plugin_init(config)
+    returned_config = cc2650.plugin_init(config)
 
     # WHEN
-    cc2650poll.plugin_shutdown(returned_config)
+    cc2650.plugin_shutdown(returned_config)
 
     # THEN
     calls = [call('SensorTagCC2650 {} Disconnected.'.format(config['bluetoothAddress']['value'])),

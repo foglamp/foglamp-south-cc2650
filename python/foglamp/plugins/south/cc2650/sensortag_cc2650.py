@@ -4,16 +4,17 @@
 # See: http://foglamp.readthedocs.io/
 # FOGLAMP_END
 
-""" Common class for TI SensorTag CC2650 for both 'async' type and 'poll' type plugins """
+""" Common class for TI SensorTag CC2650 plugins """
 
 import pexpect
 from pexpect import ExceptionPexpect, EOF, TIMEOUT
 import time
+import re
 from foglamp.common import logger
 
 
 __author__ = "Amarendra K Sinha"
-__copyright__ = "Copyright (c) 2017 OSIsoft, LLC"
+__copyright__ = "Copyright (c) 2018 Dianomic Systems"
 __license__ = "Apache 2.0"
 __version__ = "${VERSION}"
 
@@ -141,34 +142,59 @@ class SensorTagCC2650(object):
 
     def __init__(self, bluetooth_adr, timeout):
         try:
-            self.bluetooth_adr = bluetooth_adr
-
+            self.bluetooth_adr = self._validate_mac_address(bluetooth_adr)
             # If "con" var is set at class level, pick that one else create a new instance
             if SensorTagCC2650.con is None:
                 self.con = pexpect.spawn('gatttool -b ' + bluetooth_adr + ' --interactive')
             else:
                 self.con = SensorTagCC2650.con
-
-            self.con.expect('\[LE\]>', timeout=int(timeout))
-
-            msg_debug = 'SensorTagCC2650 {} Connecting... If nothing happens, please press the power button.'.\
+            self.con.expect('\[LE\]>', timeout=timeout)
+            msg_debug = 'Attempting to discover SensorTagCC2650 {}. If switched off, please switch it on.'.\
                         format(self.bluetooth_adr)
             print(msg_debug)
-            _LOGGER.debug(msg_debug)
-
+            _LOGGER.info(msg_debug)
             self.con.sendline('connect')
-            self.con.expect('.*Connection successful.*\[LE\]>', timeout=int(timeout))
+            self.con.expect('.*Connection successful.*\[LE\]>', timeout=timeout)
             self.is_connected = True
             msg_success = 'SensorTagCC2650 {} connected successfully'.format(self.bluetooth_adr)
             print(msg_success)
-            _LOGGER.debug(msg_success)
+            _LOGGER.info(msg_success)
+        except ValueError as ex:
+            print(str(ex))
+            _LOGGER.error(str(ex))
         except (ExceptionPexpect, EOF, TIMEOUT, Exception) as ex:
             self.is_connected = False
             self.con.sendline('quit')
             # TODO: Investigate why SensorTag goes to sleep often and find a suitable software solution to awake it.
-            msg_failure = 'SensorTagCC2650 {} connection failure. Timeout={} seconds.'.format(self.bluetooth_adr, timeout)
+            msg_failure = 'SensorTagCC2650 {} initial connection failure. Timeout={} seconds.'.format(self.bluetooth_adr, timeout)
             print(msg_failure)
-            _LOGGER.exception(msg_failure)
+            _LOGGER.error(msg_failure)
+
+    def _validate_mac_address(self, bluetooth_adr):
+        """
+        re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", bluetooth_adr.lower())
+        
+        it accepts 12 hex digits with either : or - or nothing as separators between pairs (but the separator must be uniform... either all separators are : or are all - or there is no separator).
+        This is the explanation:
+        
+        - [0-9a-f] means an hexadecimal digit
+        - {2} means that we want two of them
+        - [-:]? means either a dash or a colon but optional. Note that the dash as first char doesn't mean a range but only means itself. This subexpression is enclosed in parenthesis so it can be reused later as a back reference.
+        - [0-9a-f]{2} is another pair of hexadecimal digits
+        - \\1 this means that we want to match the same expression that we matched before as separator. This is what guarantees uniformity. Note that the regexp syntax is \1 but I'm using a regular string so backslash must be escaped by doubling it.
+        - [0-9a-f]{2} another pair of hex digits
+        - {4} the previous parenthesized block must be repeated exactly 4 times, giving a total of 6 pairs of digits: <pair> <sep> <pair> ( <same-sep> <pair> ) * 4
+        - $ The string must end right after them
+
+        Note that in Python re.match only checks starting at the start of the string and therefore a ^ at the beginning is not needed.
+
+        :param bluetooth_adr: 
+        :return: bluetooth_adr
+        :raises: ValueError
+        """
+        if not re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", bluetooth_adr.lower()):
+            raise ValueError("Invalid MAC address %s" % bluetooth_adr)
+        return bluetooth_adr
 
     def disconnect(self):
         if not self.is_connected:
@@ -176,12 +202,13 @@ class SensorTagCC2650(object):
             return
         try:
             self.con.sendline('disconnect')
+            self.con.sendline('quit')
             msg_success = 'SensorTagCC2650 {} disconnected'.format(self.bluetooth_adr)
             print(msg_success)
             _LOGGER.debug(msg_success)
             self.is_connected = False
         except Exception as ex:
-            _LOGGER.exception('SensorTagCC2650 {} connection failure. {}'.format(self.bluetooth_adr, str(ex)))
+            _LOGGER.error('SensorTagCC2650 {} connection failure. {}'.format(self.bluetooth_adr, str(ex)))
 
     def get_char_handle(self, uuid):
         timeout = SensorTagCC2650._CHAR_HANDLE_TIMEOUT
@@ -197,7 +224,7 @@ class SensorTagCC2650(object):
                 line = reading.decode().split('handle: ')[1]
                 rval = line.split()[0]
             except Exception as ex:
-                _LOGGER.exception('SensorTagCC2650 {} retrying fetching characteristics...'.format(self.bluetooth_adr))
+                _LOGGER.info('SensorTagCC2650 {} retrying fetching characteristics...'.format(self.bluetooth_adr))
                 time.sleep(.5)
             else:
                 break
@@ -221,7 +248,7 @@ class SensorTagCC2650(object):
             _LOGGER.info('SensorTagCC2650 {} notification handles {}'.format(
                 self.bluetooth_adr, ', '.join(notification_handles)))
         except Exception as ex:
-            _LOGGER.exception('SensorTagCC2650 {} retrying notification handles...'.format(self.bluetooth_adr))
+            _LOGGER.info('SensorTagCC2650 {} retrying notification handles...'.format(self.bluetooth_adr))
             time.sleep(.5)
         return notification_handles
 
