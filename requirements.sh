@@ -22,5 +22,20 @@
 
 set -e
 
-sudo apt install -y bluez
-pip3 install -Ir python/requirements-cc2650.txt --no-cache-dir
+os_name=`(grep -o '^NAME=.*' /etc/os-release | cut -f2 -d\" | sed 's/"//g')`
+os_version=`(grep -o '^VERSION_ID=.*' /etc/os-release | cut -f2 -d\" | sed 's/"//g')`
+echo "Platform is ${os_name}, Version: ${os_version}"
+
+if [[ ( $os_name == *"Red Hat"* || $os_name == *"CentOS"* ) &&  $os_version == *"7"* ]]; then
+	sudo yum -y install bluez
+elif apt --version 2>/dev/null; then
+	sudo apt -y install bluez
+else
+	echo "Requirements cannot be automatically installed, please refer README.rst to install requirements manually"
+fi
+
+if pip3 --version 2>/dev/null; then
+    pip3 install -Ir python/requirements-cc2650.txt --no-cache-dir
+else
+    echo "pip3 package is not installed, please install it and then run python/requirements-cc2650.txt manually with pip3"
+fi
