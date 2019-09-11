@@ -1,5 +1,5 @@
 *************************************
-FogLAMP South SensorTag CC2650 Plugin
+Fledge South SensorTag CC2650 Plugin
 *************************************
 
 This directory contains a plugin that pulls readings from TI SensorTag
@@ -22,4 +22,4 @@ precise, before shutting down. It waits for a fixed time, configured via
 Known issues:
 =============
 Since the plugin runs in a separate process and its shutdown is controlled by the
-FogLAMP Core, pressing CTRL-C does not terminate the process properly.
+Fledge Core, pressing CTRL-C does not terminate the process properly.

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# FOGLAMP_BEGIN
-# See: http://foglamp.readthedocs.io/
-# FOGLAMP_END
+# FLEDGE_BEGIN
+# See: http://fledge.readthedocs.io/
+# FLEDGE_END
 
 """Unit test for common TI SensorTag module sensortag_cc2650.py"""
 
@@ -10,8 +10,8 @@ import pexpect
 import pytest
 import uuid
 from unittest.mock import call, Mock
-from foglamp.plugins.south.cc2650 import sensortag_cc2650
-from foglamp.plugins.south.cc2650.sensortag_cc2650 import SensorTagCC2650
+from fledge.plugins.south.cc2650 import sensortag_cc2650
+from fledge.plugins.south.cc2650.sensortag_cc2650 import SensorTagCC2650
 
 __author__ = "Amarendra K Sinha"
 __copyright__ = "Copyright (c) 2018 Dianomic Systems"

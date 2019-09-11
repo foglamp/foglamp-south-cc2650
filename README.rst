@@ -1,8 +1,8 @@
 ====================
-foglamp-south-cc2650
+fledge-south-cc2650
 ====================
 
-FogLAMP South Plugin for TI SensorTag CC2650
+Fledge South Plugin for TI SensorTag CC2650
 
 Installation
 ------------

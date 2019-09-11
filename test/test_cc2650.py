@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 
-# FOGLAMP_BEGIN
-# See: http://foglamp.readthedocs.io/
-# FOGLAMP_END
+# FLEDGE_BEGIN
+# See: http://fledge.readthedocs.io/
+# FLEDGE_END
 
-"""Unit test for foglamp.plugins.south.cc2650/cc2650.py"""
+"""Unit test for fledge.plugins.south.cc2650/cc2650.py"""
 import copy
 import pytest
 from unittest.mock import call
 
-from foglamp.plugins.south.cc2650.sensortag_cc2650 import SensorTagCC2650
-from foglamp.plugins.south.cc2650 import cc2650
+from fledge.plugins.south.cc2650.sensortag_cc2650 import SensorTagCC2650
+from fledge.plugins.south.cc2650 import cc2650
 
 __author__ = "Amarendra K Sinha"
 __copyright__ = "Copyright (c) 2018 Dianomic Systems"
@@ -273,7 +273,7 @@ def test_plugin_poll_data_retrieval_error(mocker):
     returned_config = cc2650.plugin_init(config)
 
     # WHEN
-    from foglamp.services.south import exceptions
+    from fledge.services.south import exceptions
     with pytest.raises(exceptions.DataRetrievalError):
         data = cc2650.plugin_poll(returned_config)
 

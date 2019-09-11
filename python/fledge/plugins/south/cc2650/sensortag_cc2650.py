@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# FOGLAMP_BEGIN
-# See: http://foglamp.readthedocs.io/
-# FOGLAMP_END
+# FLEDGE_BEGIN
+# See: http://fledge.readthedocs.io/
+# FLEDGE_END
 
 """ Common class for TI SensorTag CC2650 plugins """
 
@@ -10,7 +10,7 @@ import pexpect
 from pexpect import ExceptionPexpect, EOF, TIMEOUT
 import time
 import re
-from foglamp.common import logger
+from fledge.common import logger
 
 
 __author__ = "Amarendra K Sinha"
