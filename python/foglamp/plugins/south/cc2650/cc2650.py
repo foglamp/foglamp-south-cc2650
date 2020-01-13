@@ -8,7 +8,6 @@
 
 import copy
 import time
-import uuid
 
 from foglamp.common import logger
 from foglamp.plugins.common import utils
@@ -269,7 +268,6 @@ def plugin_poll(handle):
             data.append({
                 'asset': '{}{}'.format(asset_prefix, _handle['temperatureSensorName']['value']),
                 'timestamp': time_stamp,
-                'key': str(uuid.uuid4()),
                 'readings': {"object": object_temp_celsius, 'ambient': ambient_temp_celsius}
             })
 
@@ -279,7 +277,6 @@ def plugin_poll(handle):
             data.append({
                 'asset': '{}{}'.format(asset_prefix, _handle['luminanceSensorName']['value']),
                 'timestamp': time_stamp,
-                'key': str(uuid.uuid4()),
                 'readings': {"lux": lux_luminance}
             })
 
@@ -289,7 +286,6 @@ def plugin_poll(handle):
             data.append({
                 'asset': '{}{}'.format(asset_prefix, _handle['humiditySensorName']['value']),
                 'timestamp': time_stamp,
-                'key': str(uuid.uuid4()),
                 'readings': {"humidity": rel_humidity, "temperature": rel_temperature}
             })
 
@@ -299,7 +295,6 @@ def plugin_poll(handle):
             data.append({
                 'asset': '{}{}'.format(asset_prefix, _handle['pressureSensorName']['value']),
                 'timestamp': time_stamp,
-                'key': str(uuid.uuid4()),
                 'readings': {"pressure": bar_pressure}
             })
 
@@ -309,19 +304,16 @@ def plugin_poll(handle):
             data.append({
                 'asset': '{}{}'.format(asset_prefix, _handle['gyroscopeSensorName']['value']),
                 'timestamp': time_stamp,
-                'key': str(uuid.uuid4()),
                 'readings': {"x": gyro_x, "y": gyro_y, "z": gyro_z}
             })
             data.append({
                 'asset': '{}{}'.format(asset_prefix, _handle['accelerometerSensorName']['value']),
                 'timestamp': time_stamp,
-                'key': str(uuid.uuid4()),
                 'readings': {"x": acc_x, "y": acc_y, "z": acc_z}
             })
             data.append({
                 'asset': '{}{}'.format(asset_prefix, _handle['magnetometerSensorName']['value']),
                 'timestamp': time_stamp,
-                'key': str(uuid.uuid4()),
                 'readings': {"x": mag_x, "y": mag_y, "z": mag_z}
             })
 
@@ -331,7 +323,6 @@ def plugin_poll(handle):
             data.append({
                 'asset': '{}{}'.format(asset_prefix, _handle['batterySensorName']['value']),
                 'timestamp': time_stamp,
-                'key': str(uuid.uuid4()),
                 'readings': {"percentage": battery_level}
             })
     except (Exception, RuntimeError, pexpect.exceptions.TIMEOUT) as ex:
